@@ -1,5 +1,5 @@
 // 앱 코드를 고친 뒤에는 아래 버전 숫자를 올려 주세요 (v1 → v2). 그래야 폰에 새 버전이 반영돼요.
-const CACHE = 'gyeolsim-v18';
+const CACHE = 'gyeolsim-v19';
 const ASSETS = ['./', './index.html', './manifest.json', './icons/icon-180.png', './icons/icon-192.png', './icons/icon-512.png'];
 
 self.addEventListener('install', e => {

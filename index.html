@@ -177,8 +177,6 @@ ul.list{list-style:none;margin:0;padding:0}
 .seg-btn .n{font-size:13px;font-weight:700}
 .seg-btn .d{font-size:11px;color:var(--sub);display:block}
 .seg-btn.on{border-color:var(--pri);background:var(--pri-soft)}
-.stepper{display:flex;align-items:center;gap:14px}
-.stepper b{font-size:20px;min-width:40px;text-align:center}
 .photo-prev{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:14px;display:block;margin-bottom:8px}
 .song{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}
 .song-t{flex:1;min-width:0}
@@ -273,7 +271,7 @@ textarea{font:inherit;font-size:16px;width:100%;padding:11px 12px;border:1px sol
 (() => {
 'use strict';
 const KEY = 'gyeolsim-v1';
-const APP_VERSION = 'v18'; // sw.js의 CACHE 숫자와 같이 올리기
+const APP_VERSION = 'v19'; // sw.js의 CACHE 숫자와 같이 올리기
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
@@ -306,7 +304,7 @@ function normCats(list) {
 function defaults() {
   return {
     tasks: [], events: [], projects: [], cats: defaultCats(),
-    settings: { name: '', singer: '김결', tone: 'balanced', goal: 3, songs: [], photo: null, alarmTimes: ['11:00', '14:00', '16:00', '20:00', '22:00'] },
+    settings: { name: '', singer: '김결', tone: 'balanced', songs: [], photo: null, alarmTimes: ['11:00', '14:00', '16:00', '20:00', '22:00'] },
     stats: { points: 0, streak: 0, lastGoalDate: null },
     ui: { installHidden: false, pushOn: false }
   };
@@ -377,6 +375,11 @@ const LINES = {
     balanced: ['오늘 \'{task}\' 해야 하지? 미리 끝내 두면 저녁이 편해.', '\'{task}\' 지금 하면 오늘 목표 {d}/{goal}에 하나 더!', '{nm}\'{task}\'부터 해치우자. 끝나면 점수 들어온다!'],
     strict:   ['\'{task}\' 오늘 마감이야. 미루지 말고 지금.', '\'{task}\' 아직 손도 안 댔지? 바로 시작.']
   },
+  free: {
+    gentle:   ['{nm}오늘 마감인 일은 없어. 여유 있을 때 하나 미리 해 볼까?', '오늘은 마감이 없는 날! 쉬어도 좋고, 하나 미리 해 둬도 좋아.'],
+    balanced: ['{nm}오늘 마감은 없네! 이럴 때 하나 미리 해 두면 나중이 편해.', '마감 없는 날이 기회야. 미리 하나 끝내면 점수도 챙겨!'],
+    strict:   ['오늘 마감 없다고 쉬지 마. 미리 하나 끝내.', '여유 있을 때 해 두는 게 실력이야. 하나 골라.']
+  },
   upcoming: {
     gentle:   ['\'{task}\' 마감이 {dd}야. 오늘 조금 해 두면 마음이 편해.'],
     balanced: ['\'{task}\' {dd}! 오늘 미리 시작하면 여유 있게 끝내.'],
@@ -420,7 +423,10 @@ function line(sit, v, salt = 0) {
   return fill(set[(hash(todayStr() + sit) + salt) % set.length], v);
 }
 const singerName = () => (S.settings.singer || '').trim() || '최애';
-const goalN = () => Math.min(10, Math.max(1, Number(S.settings.goal) || 3));
+// 오늘 목표 = 오늘 마감인 할 일 + 오늘 끝낸 할 일 (미리 끝낸 일도 목표에 더해짐)
+const todayGoalTasks = () => { const t = todayStr(); return S.tasks.filter(x => x.done ? x.doneAt === t : x.due === t); };
+const goalN = () => todayGoalTasks().length;
+const goalMet = (d, goal) => goal > 0 && d >= goal;
 const doneToday = () => { const t = todayStr(); return S.tasks.filter(x => x.done && x.doneAt === t).length; };
 
 const CRUNCH_HOUR = 18; // 이 시각부터 오늘 마감인 일을 재촉
@@ -453,9 +459,9 @@ function coachPool() {
   if (carried.length) sits.push(['carried', carried]);
   if (h < CRUNCH_HOUR && dueToday.length) sits.push(['today', dueToday]);
   if (v.p) sits.push(['behind']);
-  if (v.d >= v.goal) sits.push(['goalDone']);
+  if (goalMet(v.d, v.goal)) sits.push(['goalDone']);
   if (soon.length) sits.push(['upcoming', soon]);
-  sits.push([v.d > 0 ? 'progress' : 'start']);
+  sits.push([v.goal === 0 ? 'free' : v.d > 0 ? 'progress' : 'start']);
   // 가장 급한 두 상황만 섞어서 돌림
   return sits.slice(0, 2).flatMap(([s, tk]) => linesFor(s, { ...v, remain: remainTxt() }, tk));
 }
@@ -477,7 +483,7 @@ function coachState() {
     }
   }
   if (worst) { v.p = worst.p.title; v.pct = worst.s.pct; v.tp = worst.s.timePct ?? 100; }
-  const sit = !active.length && d < goal ? 'empty' : d >= goal ? 'goalDone' : d > 0 ? 'progress' : 'start';
+  const sit = goalMet(d, goal) ? 'goalDone' : !active.length ? 'empty' : goal === 0 ? 'free' : d > 0 ? 'progress' : 'start';
   return { sit, v };
 }
 /* ---------- 코치 알림 (push/worker.js 서버가 예약된 시간에 보냄) ---------- */
@@ -505,7 +511,7 @@ function pushItems() {
       const c = (x.carry || 0) + Math.max(0, daysBetween(x.due, ds));
       const sit = h >= CRUNCH_HOUR ? 'crunch' : c ? 'carried' : 'today';
       const set = LINES[sit][S.settings.tone] || LINES[sit].balanced;
-      const v = { nm: S.settings.name ? S.settings.name.trim() + ', ' : '', singer: singerName(), goal: goalN(), d: off ? 0 : doneToday(),
+      const v = { nm: S.settings.name ? S.settings.name.trim() + ', ' : '', singer: singerName(), goal: off ? pending.length : goalN(), d: off ? 0 : doneToday(),
         remain: remainTxt(new Date(at)), task: x.title, c, c1: c + 1 };
       const more = pending.length > 1 ? ` (남은 일 ${pending.length}개)` : '';
       items.push({ at, title: `${tone.face} ${tone.name}`, body: fill(set[(i + hash(ds)) % set.length], v) + more });
@@ -656,14 +662,13 @@ function checkProjectDone(t) {
 function toggleTask(id) {
   const t = S.tasks.find(x => x.id === id); if (!t) return;
   if (!t.done) {
-    const before = doneToday();
+    const before = doneToday(), wasMet = goalMet(before, goalN());
     let pts = 10;
     if (t.priority === 'high') pts += 5;
     if (t.due && t.due >= todayStr() && !t.carry) pts += 5;
     t.done = true; t.doneAt = todayStr(); t.pts = pts;
     S.stats.points += pts;
-    const goal = goalN();
-    const goalHit = before < goal && before + 1 >= goal;
+    const goalHit = !wasMet && goalMet(before + 1, goalN());
     if (goalHit) {
       const td = todayStr();
       if (S.stats.lastGoalDate !== td) {
@@ -784,7 +789,7 @@ function monthProjects() {
 function renderHome() {
   const t = todayStr(), now = new Date();
   const d = doneToday(), goal = goalN();
-  const pct = Math.min(100, Math.round(d / goal * 100));
+  const pct = goal ? Math.min(100, Math.round(d / goal * 100)) : 0;
   const evs = eventsOn(t);
   const projs = monthProjects();
   const todays = S.tasks.filter(x => x.due === t && (!x.done || x.doneAt === t)).sort((a, b) => (a.done - b.done) || taskSort(a, b));
@@ -795,7 +800,7 @@ function renderHome() {
   ${!standalone && !S.ui.installHidden ? `<div class="install"><div>📲 Safari <b>공유 버튼</b> → <b>홈 화면에 추가</b>를 누르면 앱처럼 쓸 수 있어요.</div><button data-act="hide-install" aria-label="닫기">✕</button></div>` : ''}
   <button class="card stats" style="width:100%;text-align:left" data-act="tab" data-tab="tasks">
     <div class="ring" style="--p:${pct}"><span>${d}/${goal}</span></div>
-    <div class="stat-txt"><div class="stat-big">오늘 목표 ${pct}%</div>
+    <div class="stat-txt"><div class="stat-big">${goal ? `오늘 목표 ${pct}%` : '오늘 마감인 할 일이 없어요'}</div>
       <div class="mini"><span>⭐ <b>${S.stats.points}</b>점</span><span>🔥 <b>${curStreak()}</b>일 연속</span></div></div>
   </button>
   <section class="card">
@@ -826,9 +831,9 @@ function coachHTML() {
     <div class="coach"><div class="coach-face">${tone.face}</div>
       <button class="bubble" data-act="nudge"><div class="coach-name">${tone.name}</div><p>${esc(coachMsg())}</p><span class="hint">탭해서 다른 말 듣기</span></button>
     </div>
-    ${v.d < v.goal ? rewardHTML(v.d, v.goal) : ''}
+    ${v.goal && !goalMet(v.d, v.goal) ? rewardHTML(v.d, v.goal) : ''}
   </section>
-  ${v.d >= v.goal ? rewardHTML(v.d, v.goal) : ''}`;
+  ${goalMet(v.d, v.goal) ? rewardHTML(v.d, v.goal) : ''}`;
 }
 
 // 왼쪽: 가수 일정, 오른쪽: 내 일정(가수 일정이 아닌 모든 카테고리)
@@ -1024,8 +1029,6 @@ function renderSettings() {
     <div class="field"><span class="lbl">코치 스타일</span><div class="seg">
       ${Object.entries(TONE).map(([k, o]) => `<button class="seg-btn ${st.tone === k ? 'on' : ''}" data-act="tone" data-v="${k}"><span class="f">${o.face}</span><span class="n">${o.name}</span><span class="d">${o.desc}</span></button>`).join('')}
     </div></div>
-    <div class="field" style="margin-bottom:0"><span class="lbl">하루 목표 (완료할 할 일 개수)</span>
-      <div class="stepper"><button class="icon-btn" data-act="goal" data-v="-1" aria-label="줄이기">−</button><b>${goalN()}개</b><button class="icon-btn" data-act="goal" data-v="1" aria-label="늘리기">+</button></div></div>
   </section>
 
   <section class="card">
@@ -1219,7 +1222,6 @@ document.addEventListener('click', e => {
       dpSet(f, false); break;
     }
     case 'tone': S.settings.tone = el.dataset.v; save(); render(); toast(`${TONE[el.dataset.v].face} ${TONE[el.dataset.v].name}가 맡을게요!`); break;
-    case 'goal': S.settings.goal = Math.min(10, Math.max(1, goalN() + Number(el.dataset.v))); save(); render(); break;
     case 'new-cat': openCatSheet(null); break;
     case 'edit-cat': { const c = S.cats.find(x => x.id === el.dataset.id); if (c) openCatSheet(c); break; }
     case 'del-cat': {
