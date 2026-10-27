@@ -80,9 +80,11 @@ h2{font-size:16px;margin:0 0 10px;letter-spacing:-.01em}
 
 .rw-lock{margin:-6px 16px 14px 76px;font-size:12.5px;color:var(--sub)}
 .rw-lock b{color:var(--ink)}
-.hours{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
-.hour{padding:9px 4px;border-radius:10px;border:1px solid var(--line);background:var(--bg);font-size:13px;font-weight:600;color:var(--sub)}
-.hour.on{background:var(--pri-soft);border-color:var(--pri);color:var(--pri)}
+.atimes{display:flex;flex-wrap:wrap;gap:6px}
+.atime{display:inline-flex;align-items:center;gap:2px;padding:4px 4px 4px 10px;border-radius:999px;background:var(--pri-soft);color:var(--pri);font-size:13px;font-weight:600}
+.atime button{width:24px;height:24px;border-radius:50%;font-size:11px;color:var(--pri)}
+.alarm-add{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;margin-top:10px}
+.alarm-add .btn{min-height:44px}
 .fab{position:fixed;right:max(16px,calc(50% - 264px));bottom:calc(env(safe-area-inset-bottom) + 78px);width:56px;height:56px;border-radius:50%;background:var(--pri);color:var(--pri-ink);font-size:30px;font-weight:400;line-height:1;display:grid;place-items:center;box-shadow:0 6px 18px rgba(60,30,160,.35);z-index:25}
 
 /* dday */
@@ -303,7 +305,7 @@ function normCats(list) {
 function defaults() {
   return {
     tasks: [], events: [], projects: [], cats: defaultCats(),
-    settings: { name: '', singer: '김결', tone: 'balanced', goal: 3, songs: [], photo: null, alarmHours: [11, 14, 16, 20, 22] },
+    settings: { name: '', singer: '김결', tone: 'balanced', goal: 3, songs: [], photo: null, alarmTimes: ['11:00', '14:00', '16:00', '20:00', '22:00'] },
     stats: { points: 0, streak: 0, lastGoalDate: null },
     ui: { installHidden: false, pushOn: false }
   };
@@ -315,7 +317,12 @@ function normalize(d) {
     events: Array.isArray(d.events) ? d.events.filter(e => e && e.id && isDate(e.date)) : [],
     projects: Array.isArray(d.projects) ? d.projects.filter(p => p && p.id && p.title) : [],
     cats: normCats(d.cats),
-    settings: { ...b.settings, ...(d.settings || {}) },
+    settings: (() => { // 예전 alarmHours(정시 숫자)를 alarmTimes('HH:MM')로 옮김
+      const st = { ...b.settings, ...(d.settings || {}) };
+      if (!Array.isArray((d.settings || {}).alarmTimes) && Array.isArray(st.alarmHours)) st.alarmTimes = st.alarmHours.filter(Number.isInteger).map(h => `${pad(h)}:00`);
+      delete st.alarmHours;
+      return st;
+    })(),
     stats: { ...b.stats, ...(d.stats || {}) },
     ui: { ...b.ui, ...(d.ui || {}) }
   };
@@ -475,7 +482,9 @@ function coachState() {
 /* ---------- 코치 알림 (push/worker.js 서버가 예약된 시간에 보냄) ---------- */
 const PUSH_API = 'https://gyeolsim-push.kboram28.workers.dev';
 const VAPID_PUBLIC = 'BIxOlEIR5pyobxPwy3sUNw_pffZJdHeWwA9Rv0X6hR1EvMwC1I5V6ADAKA7sWlCnfSQ-0FalW2P0tvyaNMR0Hg4';
-const alarmHours = () => (Array.isArray(S.settings.alarmHours) ? S.settings.alarmHours : []).filter(h => Number.isInteger(h) && h >= 0 && h <= 23).sort((a, b) => a - b);
+const MAX_ALARMS = 12;
+const alarmTimes = () => [...new Set((Array.isArray(S.settings.alarmTimes) ? S.settings.alarmTimes : []).filter(t => /^([01]\d|2[0-3]):[0-5]\d$/.test(t)))].sort();
+const timeLabel = t => { const [h, m] = t.split(':').map(Number); return `${h < 12 ? '오전' : '오후'} ${h % 12 || 12}:${pad(m)}`; };
 const pushSupported = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
 // 오늘·내일 알림 시각마다, 그날 남은 할 일 이름을 넣은 코치 말을 미리 만들어 둠
 function pushItems() {
@@ -487,8 +496,9 @@ function pushItems() {
     // 그날 끝내야 할 일: 일반 할 일은 그날까지 마감(안 끝내면 이월되니까), 세부 할 일은 그날 마감만
     const pending = S.tasks.filter(x => !x.done && isDate(x.due) && (x.projectId ? x.due === ds : x.due <= ds)).sort(urgent);
     if (!pending.length) continue;
-    alarmHours().forEach((h, i) => {
-      const at = new Date(day.getFullYear(), day.getMonth(), day.getDate(), h).getTime();
+    alarmTimes().forEach((tm, i) => {
+      const [h, mi] = tm.split(':').map(Number);
+      const at = new Date(day.getFullYear(), day.getMonth(), day.getDate(), h, mi).getTime();
       if (at <= now) return;
       const x = pending[i % pending.length];
       const c = (x.carry || 0) + Math.max(0, daysBetween(x.due, ds));
@@ -1042,7 +1052,11 @@ function renderSettings() {
       : `<button class="btn primary sm" data-act="push-on">알림 켜기</button>
         ${window.navigator.standalone === false ? '<p class="muted" style="margin:8px 0 0">홈 화면에 추가한 gyeolsim 앱에서 켜야 알림이 와요.</p>' : ''}`}
     <div class="lbl" style="font-weight:600;font-size:14px;margin:14px 0 6px">알림 받을 시간</div>
-    <div class="hours">${Array.from({ length: 18 }, (_, i) => i + 6).map(h => `<button class="hour ${alarmHours().includes(h) ? 'on' : ''}" data-act="alarm-hour" data-v="${h}">${h < 12 ? '오전' : '오후'} ${h % 12 || 12}시</button>`).join('')}</div>
+    <div class="atimes">${alarmTimes().map(t => `<span class="atime">${timeLabel(t)}<button data-act="alarm-del" data-v="${t}" aria-label="${timeLabel(t)} 삭제">✕</button></span>`).join('') || '<span class="muted">정한 시간이 없어요.</span>'}</div>
+    ${alarmTimes().length < MAX_ALARMS ? `<div class="alarm-add">
+      <select id="alarm-h" aria-label="시">${Array.from({ length: 24 }, (_, h) => `<option value="${pad(h)}" ${h === 9 ? 'selected' : ''}>${h < 12 ? '오전' : '오후'} ${h % 12 || 12}시</option>`).join('')}</select>
+      <select id="alarm-m" aria-label="분">${Array.from({ length: 12 }, (_, n) => `<option value="${pad(n * 5)}">${pad(n * 5)}분</option>`).join('')}</select>
+      <button class="btn ghost" data-act="alarm-add">추가</button></div>` : ''}
     <p class="muted" style="margin:8px 0 0">알림 내용은 앱을 마지막으로 열었을 때의 할 일 기준이에요. 할 일을 끝냈으면 앱에서 체크해 주세요.</p>
   </section>
 
@@ -1139,11 +1153,12 @@ document.addEventListener('click', e => {
     case 'push-on': enablePush(); break;
     case 'push-off': disablePush(); break;
     case 'push-test': testPush(); break;
-    case 'alarm-hour': {
-      const h = Number(el.dataset.v), hs = alarmHours();
-      S.settings.alarmHours = hs.includes(h) ? hs.filter(x => x !== h) : [...hs, h].sort((a, b) => a - b);
-      save(); render(); break;
+    case 'alarm-add': {
+      const t = `${$('#alarm-h').value}:${$('#alarm-m').value}`, ts = alarmTimes();
+      if (ts.includes(t)) { toast('이미 있는 시간이에요.'); break; }
+      S.settings.alarmTimes = [...ts, t].sort(); save(); render(); toast(`${timeLabel(t)} 알림을 추가했어요.`); break;
     }
+    case 'alarm-del': S.settings.alarmTimes = alarmTimes().filter(x => x !== el.dataset.v); save(); render(); break;
     case 'edit-proj': openProjectSheet(projById(el.dataset.id)); break;
     case 'del-proj': {
       const p = projById(el.dataset.id); if (!p) break;
