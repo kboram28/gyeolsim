@@ -7,11 +7,11 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="결심">
+<meta name="apple-mobile-web-app-title" content="gyeolsim">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
 <link rel="icon" type="image/png" href="icons/icon-192.png">
-<title>결심</title>
+<title>gyeolsim</title>
 <style>
 :root{
   --bg:#f6f4fb;--card:#ffffff;--ink:#1d1b26;--sub:#6b6880;--line:#e7e3f2;
@@ -117,7 +117,14 @@ ul.list{list-style:none;margin:0;padding:0}
 .dpf{min-width:0}
 .sheet div.f{margin-bottom:12px}
 .sheet div.f .dpf,.sheet div.f .tp{margin-top:5px}
-.tp{display:grid;grid-template-columns:3fr 2fr;gap:8px}
+.tp{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.dp-ttl{font-weight:700;font-size:15px;padding:6px 10px;border-radius:10px;background:var(--card);border:1px solid var(--line)}
+.dp-ttl.on{border-color:var(--pri);color:var(--pri)}
+.dp-pick4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.dp-opt{height:44px;border-radius:10px;border:1px solid var(--line);background:var(--card);font-weight:600;font-size:14px}
+.dp-opt.now{border-color:var(--pri);color:var(--pri)}
+.dp-opt.sel{background:var(--pri);border-color:var(--pri);color:var(--pri-ink)}
+.dp-opt:disabled{opacity:.3;cursor:default}
 .date-btn{display:block;width:100%;min-height:44px;padding:0 12px;border-radius:12px;border:1px solid var(--line);background:var(--bg);text-align:left;font-size:15px}
 .dp{margin-top:8px;padding:10px;border:1px solid var(--line);border-radius:14px;background:var(--bg)}
 .dp .cal-head{margin-bottom:4px}
@@ -754,7 +761,8 @@ function ddayHTML() {
     return `<div class="card dday" style="--fan:${color}"><div class="dd-label">${label}</div>
       <div class="dd-num">${n === 0 ? 'D-DAY' : 'D-' + n}</div>
       <div class="dd-title">${esc(nx.e.title)}</div>
-      <div class="muted">${fmtShort(nx.d)} (${WD[parseD(nx.d).getDay()]})${nx.e.time ? ' · ' + esc(nx.e.time) : ''}</div></div>`;
+      <div class="muted">${fmtShort(nx.d)} (${WD[parseD(nx.d).getDay()]})${nx.e.time ? ' · ' + esc(nx.e.time) : ''}</div>
+      ${nx.e.place ? `<div class="muted" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">📍 ${esc(nx.e.place)}</div>` : ''}</div>`;
   };
   return `<div class="dd-wrap">
     ${half(true, `⭐ ${esc(singerName())}`, `생일·공연 같은 ${esc(singerName())} 일정을 등록해 보세요.`)}
@@ -783,7 +791,7 @@ function evItem(e) {
   return `<li class="ev" style="--c:${c.color}">
     <div class="ev-time">${e.time ? esc(e.time) : '종일'}</div><div class="ev-bar"></div>
     <div class="t-main"><div class="t-title">${esc(e.title)}</div>
-    <div class="t-meta"><span class="badge pj">${esc(catName(c))}</span>${e.yearly ? '<span class="badge">매년</span>' : ''}</div></div>
+    <div class="t-meta"><span class="badge pj">${esc(catName(c))}</span>${e.yearly ? '<span class="badge">매년</span>' : ''}${e.place ? `<span class="badge">📍 ${esc(e.place)}</span>` : ''}</div></div>
     <button class="x" data-act="del-event" data-id="${esc(e.id)}" aria-label="삭제">✕</button></li>`;
 }
 
@@ -836,9 +844,27 @@ function datePick(name, value, opts = {}) {
     <button type="button" class="date-btn" data-act="dp-toggle" aria-expanded="false">${dueLabel(value)}</button>
     <div class="dp-box"></div></div>`;
 }
+const YEARS_PER_PAGE = 20;
+// 연도 버튼 → 연도 목록, 월 버튼 → 월 목록에서 바로 고르기
 function dpHTML(f) {
   const [y, m] = f.dataset.cur.split('-').map(Number);
   const val = f.querySelector('input').value, { min, max, none } = f.dataset, t = todayStr();
+  const mode = f.dataset.mode || 'day';
+  const nav = (lbl) => `<div class="cal-nav"><button type="button" class="icon-btn" data-act="dp-move" data-v="-1" aria-label="이전 ${lbl}">‹</button><button type="button" class="icon-btn" data-act="dp-move" data-v="1" aria-label="다음 ${lbl}">›</button></div>`;
+  const ttl = `<div style="display:flex;gap:6px"><button type="button" class="dp-ttl ${mode === 'year' ? 'on' : ''}" data-act="dp-mode" data-v="year">${y}년 ▾</button><button type="button" class="dp-ttl ${mode === 'month' ? 'on' : ''}" data-act="dp-mode" data-v="month">${m}월 ▾</button></div>`;
+  if (mode === 'year') {
+    const base = Math.floor(y / YEARS_PER_PAGE) * YEARS_PER_PAGE, ny = +t.slice(0, 4);
+    const ys = Array.from({ length: YEARS_PER_PAGE }, (_, i) => base + i);
+    return `<div class="dp"><div class="cal-head">${ttl}${nav('연도들')}</div>
+      <div class="dp-pick4">${ys.map(v => `<button type="button" class="dp-opt ${v === y ? 'sel' : v === ny ? 'now' : ''}" data-act="dp-y" data-v="${v}" ${(min && v < +min.slice(0, 4)) || (max && v > +max.slice(0, 4)) ? 'disabled' : ''}>${v}</button>`).join('')}</div></div>`;
+  }
+  if (mode === 'month') {
+    return `<div class="dp"><div class="cal-head">${ttl}${nav('해')}</div>
+      <div class="dp-pick4">${Array.from({ length: 12 }, (_, i) => i + 1).map(v => {
+        const ym = `${y}-${pad(v)}`;
+        return `<button type="button" class="dp-opt ${v === m ? 'sel' : ym === t.slice(0, 7) ? 'now' : ''}" data-act="dp-m" data-v="${v}" ${(min && ym < min.slice(0, 7)) || (max && ym > max.slice(0, 7)) ? 'disabled' : ''}>${v}월</button>`;
+      }).join('')}</div></div>`;
+  }
   const start = new Date(y, m - 1, 1).getDay(), dim = new Date(y, m, 0).getDate();
   let cells = WD.map((w, i) => `<div class="wd ${i === 0 ? 'sun' : i === 6 ? 'sat' : ''}">${w}</div>`).join('');
   for (let i = 0; i < start; i++) cells += '<div></div>';
@@ -849,7 +875,7 @@ function dpHTML(f) {
   }
   const todayOk = !(min && t < min) && !(max && t > max);
   return `<div class="dp">
-    <div class="cal-head"><b>${y}년 ${m}월</b><div class="cal-nav"><button type="button" class="icon-btn" data-act="dp-move" data-v="-1" aria-label="이전 달">‹</button><button type="button" class="icon-btn" data-act="dp-move" data-v="1" aria-label="다음 달">›</button></div></div>
+    <div class="cal-head">${ttl}${nav('달')}</div>
     <div class="grid">${cells}</div>
     ${todayOk || none ? `<div class="btn-row" style="margin-top:8px">${todayOk ? `<button type="button" class="btn ghost sm" data-act="dp-pick" data-d="${t}">오늘</button>` : ''}${none ? '<button type="button" class="btn ghost sm" data-act="dp-pick" data-d="">날짜 없음</button>' : ''}</div>` : ''}
   </div>`;
@@ -957,14 +983,13 @@ function openEventSheet(date) {
   $('#sheet').innerHTML = `<div class="sheet-bg" data-act="close-bg"><div class="sheet" role="dialog" aria-label="일정 추가">
     <form data-form="event">
       <h3>일정 추가</h3>
-      <label class="f">제목<input type="text" name="text" required maxlength="60" placeholder="예: 팀 회의, ${esc(singerName())} 콘서트" autocomplete="off"></label>
+      <label class="f">제목<input type="text" name="text" required maxlength="60" autocomplete="off"></label>
       <div class="f"><span class="muted" style="font-weight:600;font-size:13px">날짜</span>${datePick('date', date)}</div>
       <div class="f"><span class="muted" style="font-weight:600;font-size:13px">시간 (선택)</span>${timePick('')}</div>
-      <div class="sec-head"><span class="muted" style="font-weight:600">카테고리</span><button type="button" class="link" style="font-size:13px" data-act="manage-cats">카테고리·색상 관리</button></div>
-      <div class="type-seg">
-        ${S.cats.map(c => `<label><input type="radio" name="type" value="${esc(c.id)}" ${c.id === 'me' ? 'checked' : ''}><span><i class="dot cat" style="--c:${c.color}"></i>${esc(catName(c))}</span></label>`).join('')}
-      </div>
-      <label class="check"><input type="checkbox" name="yearly"> 매년 반복 (생일·데뷔일 등)</label>
+      <label class="f">장소 (선택)<input type="text" name="place" maxlength="60" autocomplete="off"></label>
+      <div class="f"><div class="sec-head" style="margin-bottom:5px"><span class="muted" style="font-weight:600;font-size:13px">카테고리</span><button type="button" class="link" style="font-size:13px" data-act="manage-cats">카테고리·색상 관리</button></div>
+        <select name="type" aria-label="카테고리">${S.cats.map(c => `<option value="${esc(c.id)}" ${c.id === 'me' ? 'selected' : ''}>${esc(catName(c))}</option>`).join('')}</select></div>
+      <label class="check"><input type="checkbox" name="yearly"> 매년 반복</label>
       <div class="sheet-btns"><button type="button" class="btn ghost" data-act="close">취소</button><button class="btn primary">저장</button></div>
     </form></div></div>`;
   setTimeout(() => { const i = $('#sheet input[name=text]'); if (i) i.focus(); }, 50);
@@ -1059,13 +1084,20 @@ document.addEventListener('click', e => {
     case 'filter': taskFilter = el.dataset.f; render(); break;
     case 'dp-toggle': {
       const f = el.closest('.dpf'), open = !f.querySelector('.dp');
-      if (open) f.dataset.cur = (f.querySelector('input').value || todayStr()).slice(0, 7);
+      if (open) { f.dataset.cur = (f.querySelector('input').value || todayStr()).slice(0, 7); f.dataset.mode = 'day'; }
       dpSet(f, open); break;
     }
     case 'dp-move': {
-      const f = el.closest('.dpf'), [y, m] = f.dataset.cur.split('-').map(Number);
-      const d = new Date(y, m - 1 + Number(el.dataset.v), 1);
+      const f = el.closest('.dpf'), [y, m] = f.dataset.cur.split('-').map(Number), mode = f.dataset.mode || 'day';
+      const step = mode === 'year' ? 12 * YEARS_PER_PAGE : mode === 'month' ? 12 : 1;
+      const d = new Date(y, m - 1 + Number(el.dataset.v) * step, 1);
       f.dataset.cur = `${d.getFullYear()}-${pad(d.getMonth() + 1)}`; dpSet(f, true); break;
+    }
+    case 'dp-mode': { const f = el.closest('.dpf'); f.dataset.mode = f.dataset.mode === el.dataset.v ? 'day' : el.dataset.v; dpSet(f, true); break; }
+    case 'dp-y': case 'dp-m': {
+      const f = el.closest('.dpf'), [y, m] = f.dataset.cur.split('-');
+      f.dataset.cur = a === 'dp-y' ? `${el.dataset.v}-${m}` : `${y}-${pad(el.dataset.v)}`;
+      f.dataset.mode = 'day'; dpSet(f, true); break;
     }
     case 'dp-pick': {
       const f = el.closest('.dpf'); f.querySelector('input').value = el.dataset.d;
@@ -1136,7 +1168,7 @@ document.addEventListener('submit', e => {
   } else if (k === 'event') {
     const title = el.text.value.trim(), date = el.date.value;
     if (!title || !isDate(date)) { toast('제목과 날짜를 입력해 주세요.'); return; }
-    S.events.push({ id: uid(), title: title.slice(0, 60), date, time: timeVal(el), type: catById(el.type.value).id, yearly: el.yearly.checked });
+    S.events.push({ id: uid(), title: title.slice(0, 60), date, time: timeVal(el), place: el.place.value.trim().slice(0, 60), type: catById(el.type.value).id, yearly: el.yearly.checked });
     save(); closeSheet(); selDay = date; render(); toast('일정을 추가했어요.');
   }
 });

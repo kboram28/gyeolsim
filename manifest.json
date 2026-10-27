@@ -1,6 +1,6 @@
 {
-  "name": "결심 - 일정·할 일 코치",
-  "short_name": "결심",
+  "name": "gyeolsim",
+  "short_name": "gyeolsim",
   "description": "캘린더와 코치형 할 일 목록, 최애 노래 보상",
   "start_url": "./",
   "scope": "./",
