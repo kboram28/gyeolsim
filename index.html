@@ -273,6 +273,7 @@ textarea{font:inherit;font-size:16px;width:100%;padding:11px 12px;border:1px sol
 (() => {
 'use strict';
 const KEY = 'gyeolsim-v1';
+const APP_VERSION = 'v16'; // sw.js의 CACHE 숫자와 같이 올리기
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
@@ -1087,7 +1088,8 @@ function renderSettings() {
       <label class="btn ghost sm file-btn">백업 불러오기<input type="file" accept="application/json,.json" data-file="import"></label>
       <button class="btn danger sm" data-act="reset">전체 초기화</button>
     </div>
-  </section>`;
+  </section>
+  <p class="muted" style="text-align:center;margin:4px 0 0">gyeolsim ${APP_VERSION}</p>`;
 }
 
 /* ---------- 시트 / 토스트 ---------- */
@@ -1336,7 +1338,11 @@ function importData(file) {
   reader.readAsText(file);
 }
 
-document.addEventListener('visibilitychange', () => { if (!document.hidden) { render(); queuePushSync(); } });
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) return;
+  render(); queuePushSync();
+  if ('serviceWorker' in navigator) navigator.serviceWorker.getRegistration().then(r => r && r.update()).catch(() => {}); // 새 버전 확인
+});
 
 // 코치 말 주기적으로 바꾸기 (말풍선 글자만 바꿔서 입력 중인 내용은 그대로 둠)
 let renderedDay = todayStr();
@@ -1354,7 +1360,11 @@ setInterval(() => {
 }, 20000);
 
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
-  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+  // 새 서비스 워커가 자리 잡으면 한 번 새로고침해서 새 버전을 바로 보여 줌 (첫 설치 때는 제외)
+  const hadController = !!navigator.serviceWorker.controller;
+  let reloaded = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => { if (hadController && !reloaded) { reloaded = true; location.reload(); } });
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(r => r.update()).catch(() => {}));
 }
 
 render();
