@@ -273,7 +273,7 @@ textarea{font:inherit;font-size:16px;width:100%;padding:11px 12px;border:1px sol
 (() => {
 'use strict';
 const KEY = 'gyeolsim-v1';
-const APP_VERSION = 'v16'; // sw.js의 CACHE 숫자와 같이 올리기
+const APP_VERSION = 'v17'; // sw.js의 CACHE 숫자와 같이 올리기
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
@@ -543,15 +543,6 @@ async function disablePush() {
   } catch (e) {}
   S.ui.pushOn = false; lastPushPayload = ''; save(); render(); toast('코치 알림을 껐어요.');
 }
-async function testPush() {
-  try {
-    const sub = await (await navigator.serviceWorker.ready).pushManager.getSubscription();
-    if (!sub) { toast('먼저 알림을 켜 주세요.'); return; }
-    const r = await fetch(PUSH_API + '/test', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sub: sub.toJSON() }) });
-    toast(r.ok ? '테스트 알림을 보냈어요. 몇 초 안에 와요.' : '알림 서버가 응답하지 않아요.');
-  } catch (e) { toast('알림 서버에 연결하지 못했어요.'); }
-}
-
 function curStreak() {
   const last = S.stats.lastGoalDate; if (!last) return 0;
   const y = new Date(); y.setDate(y.getDate() - 1);
@@ -1049,7 +1040,7 @@ function renderSettings() {
     <h2>코치 알림 🔔</h2>
     <p class="muted" style="margin:0 0 10px">정한 시간에 아직 안 끝낸 할 일을 코치가 알림으로 재촉해요. 그날 할 일이 없으면 알림이 오지 않아요.</p>
     ${!/^https:/.test(PUSH_API) ? '<p class="muted" style="margin:0"><b>알림 서버 준비 중이에요.</b> 준비되면 여기에서 알림을 켤 수 있어요.</p>'
-      : S.ui.pushOn ? `<div class="btn-row"><button class="btn ghost sm" data-act="push-test">테스트 알림 보내기</button><button class="btn danger sm" data-act="push-off">알림 끄기</button></div>`
+      : S.ui.pushOn ? `<div class="btn-row"><span class="muted" style="align-self:center">🔔 알림이 켜져 있어요</span><button class="btn danger sm" data-act="push-off">알림 끄기</button></div>`
       : `<button class="btn primary sm" data-act="push-on">알림 켜기</button>
         ${window.navigator.standalone === false ? '<p class="muted" style="margin:8px 0 0">홈 화면에 추가한 gyeolsim 앱에서 켜야 알림이 와요.</p>' : ''}`}
     <div class="lbl" style="font-weight:600;font-size:14px;margin:14px 0 6px">알림 받을 시간</div>
@@ -1154,7 +1145,6 @@ document.addEventListener('click', e => {
     case 'new-task': openTaskSheet(); break;
     case 'push-on': enablePush(); break;
     case 'push-off': disablePush(); break;
-    case 'push-test': testPush(); break;
     case 'alarm-add': {
       const t = `${$('#alarm-h').value}:${$('#alarm-m').value}`, ts = alarmTimes();
       if (ts.includes(t)) { toast('이미 있는 시간이에요.'); break; }
