@@ -78,6 +78,13 @@ h2{font-size:16px;margin:0 0 10px;letter-spacing:-.01em}
 .rw-title{font-weight:700;font-size:16px;margin:2px 0 8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rw-btns{display:flex;gap:8px}
 
+.rw-lock{margin:-6px 16px 14px 76px;font-size:12.5px;color:var(--sub)}
+.rw-lock b{color:var(--ink)}
+.hours{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.hour{padding:9px 4px;border-radius:10px;border:1px solid var(--line);background:var(--bg);font-size:13px;font-weight:600;color:var(--sub)}
+.hour.on{background:var(--pri-soft);border-color:var(--pri);color:var(--pri)}
+.fab{position:fixed;right:max(16px,calc(50% - 264px));bottom:calc(env(safe-area-inset-bottom) + 78px);width:56px;height:56px;border-radius:50%;background:var(--pri);color:var(--pri-ink);font-size:30px;font-weight:400;line-height:1;display:grid;place-items:center;box-shadow:0 6px 18px rgba(60,30,160,.35);z-index:25}
+
 /* dday */
 .dd-wrap{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
 .dd-wrap .card{margin-bottom:0}
@@ -296,9 +303,9 @@ function normCats(list) {
 function defaults() {
   return {
     tasks: [], events: [], projects: [], cats: defaultCats(),
-    settings: { name: '', singer: '김결', tone: 'balanced', goal: 3, songs: [], photo: null },
+    settings: { name: '', singer: '김결', tone: 'balanced', goal: 3, songs: [], photo: null, alarmHours: [11, 14, 16, 20, 22] },
     stats: { points: 0, streak: 0, lastGoalDate: null },
-    ui: { installHidden: false }
+    ui: { installHidden: false, pushOn: false }
   };
 }
 function normalize(d) {
@@ -321,6 +328,7 @@ let S = load();
 function save() {
   try { localStorage.setItem(KEY, JSON.stringify(S)); }
   catch (e) { toast('저장 공간이 부족해요. 응원 사진을 지우거나 바꿔 보세요.'); }
+  queuePushSync();
 }
 if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
 
@@ -408,8 +416,8 @@ const goalN = () => Math.min(10, Math.max(1, Number(S.settings.goal) || 3));
 const doneToday = () => { const t = todayStr(); return S.tasks.filter(x => x.done && x.doneAt === t).length; };
 
 const CRUNCH_HOUR = 18; // 이 시각부터 오늘 마감인 일을 재촉
-function remainTxt() {
-  const n = new Date(), m = 24 * 60 - (n.getHours() * 60 + n.getMinutes());
+function remainTxt(n = new Date()) {
+  const m = 24 * 60 - (n.getHours() * 60 + n.getMinutes());
   return m >= 60 ? `${Math.floor(m / 60)}시간${m % 60 ? ' ' + (m % 60) + '분' : ''}` : `${m}분`;
 }
 // 상황 + 할 일마다 대사를 만들어 둠 (template 순서로 돌면서 할 일이 번갈아 나오게)
@@ -464,6 +472,75 @@ function coachState() {
   const sit = !active.length && d < goal ? 'empty' : d >= goal ? 'goalDone' : d > 0 ? 'progress' : 'start';
   return { sit, v };
 }
+/* ---------- 코치 알림 (push/worker.js 서버가 예약된 시간에 보냄) ---------- */
+const PUSH_API = 'REPLACE_WITH_WORKER_URL';
+const VAPID_PUBLIC = 'BIxOlEIR5pyobxPwy3sUNw_pffZJdHeWwA9Rv0X6hR1EvMwC1I5V6ADAKA7sWlCnfSQ-0FalW2P0tvyaNMR0Hg4';
+const alarmHours = () => (Array.isArray(S.settings.alarmHours) ? S.settings.alarmHours : []).filter(h => Number.isInteger(h) && h >= 0 && h <= 23).sort((a, b) => a - b);
+const pushSupported = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+// 오늘·내일 알림 시각마다, 그날 남은 할 일 이름을 넣은 코치 말을 미리 만들어 둠
+function pushItems() {
+  const tone = TONE[S.settings.tone] || TONE.balanced, now = Date.now(), items = [];
+  const urgent = (a, b) => (b.priority === 'high') - (a.priority === 'high') || (b.carry || 0) - (a.carry || 0) || taskSort(a, b);
+  for (let off = 0; off < 2; off++) {
+    const day = new Date(); day.setDate(day.getDate() + off);
+    const ds = ymd(day);
+    // 그날 끝내야 할 일: 일반 할 일은 그날까지 마감(안 끝내면 이월되니까), 세부 할 일은 그날 마감만
+    const pending = S.tasks.filter(x => !x.done && isDate(x.due) && (x.projectId ? x.due === ds : x.due <= ds)).sort(urgent);
+    if (!pending.length) continue;
+    alarmHours().forEach((h, i) => {
+      const at = new Date(day.getFullYear(), day.getMonth(), day.getDate(), h).getTime();
+      if (at <= now) return;
+      const x = pending[i % pending.length];
+      const c = (x.carry || 0) + Math.max(0, daysBetween(x.due, ds));
+      const sit = h >= CRUNCH_HOUR ? 'crunch' : c ? 'carried' : 'today';
+      const set = LINES[sit][S.settings.tone] || LINES[sit].balanced;
+      const v = { nm: S.settings.name ? S.settings.name.trim() + ', ' : '', singer: singerName(), goal: goalN(), d: off ? 0 : doneToday(),
+        remain: remainTxt(new Date(at)), task: x.title, c, c1: c + 1 };
+      const more = pending.length > 1 ? ` (남은 일 ${pending.length}개)` : '';
+      items.push({ at, title: `${tone.face} ${tone.name}`, body: fill(set[(i + hash(ds)) % set.length], v) + more });
+    });
+  }
+  return items;
+}
+let pushTimer = null, lastPushPayload = '';
+function queuePushSync() { clearTimeout(pushTimer); pushTimer = setTimeout(() => pushSync().catch(() => {}), 1500); }
+async function pushSync(force) {
+  if (!S.ui.pushOn || !pushSupported() || !/^https:/.test(PUSH_API)) return;
+  const reg = await navigator.serviceWorker.ready;
+  const sub = await reg.pushManager.getSubscription();
+  if (!sub) { S.ui.pushOn = false; save(); render(); return; }
+  const payload = JSON.stringify({ sub: sub.toJSON(), items: pushItems() });
+  if (!force && payload === lastPushPayload) return;
+  const r = await fetch(PUSH_API + '/schedule', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload });
+  if (r.ok) lastPushPayload = payload;
+}
+const b64uToBytes = s => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((s.length + 3) % 4)), c => c.charCodeAt(0));
+async function enablePush() {
+  if (!pushSupported()) { toast('홈 화면에 추가한 gyeolsim 앱에서만 알림을 켤 수 있어요. (iOS 16.4 이상)'); return; }
+  const perm = await Notification.requestPermission(); // 아이폰은 버튼을 누른 순간 바로 불러야 함
+  if (perm !== 'granted') { toast('알림이 꺼져 있어요. 아이폰 설정 → 알림 → gyeolsim에서 켜 주세요.'); return; }
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription() || await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64uToBytes(VAPID_PUBLIC) });
+    S.ui.pushOn = true; save(); await pushSync(true); render(); toast('코치 알림을 켰어요 🔔');
+  } catch (e) { toast('알림을 켜지 못했어요. 잠시 뒤 다시 해 주세요.'); }
+}
+async function disablePush() {
+  try {
+    const sub = await (await navigator.serviceWorker.ready).pushManager.getSubscription();
+    if (sub) { fetch(PUSH_API + '/unsubscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sub: sub.toJSON() }) }).catch(() => {}); await sub.unsubscribe(); }
+  } catch (e) {}
+  S.ui.pushOn = false; lastPushPayload = ''; save(); render(); toast('코치 알림을 껐어요.');
+}
+async function testPush() {
+  try {
+    const sub = await (await navigator.serviceWorker.ready).pushManager.getSubscription();
+    if (!sub) { toast('먼저 알림을 켜 주세요.'); return; }
+    const r = await fetch(PUSH_API + '/test', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sub: sub.toJSON() }) });
+    toast(r.ok ? '테스트 알림을 보냈어요. 몇 초 안에 와요.' : '알림 서버가 응답하지 않아요.');
+  } catch (e) { toast('알림 서버에 연결하지 못했어요.'); }
+}
+
 function curStreak() {
   const last = S.stats.lastGoalDate; if (!last) return 0;
   const y = new Date(); y.setDate(y.getDate() - 1);
@@ -720,7 +797,7 @@ function renderHome() {
       <div class="mini"><span>⭐ <b>${S.stats.points}</b>점</span><span>🔥 <b>${curStreak()}</b>일 연속</span></div></div>
   </button>
   <section class="card">
-    <div class="sec-head"><h2>오늘 할 일</h2><button class="btn ghost sm" data-act="tab" data-tab="tasks">+ 할 일</button></div>
+    <div class="sec-head"><h2>오늘 할 일</h2><button class="btn ghost sm" data-act="new-task">+ 할 일</button></div>
     ${todays.length ? `<ul class="list">${todays.map(x => taskItem(x)).join('')}</ul>` : '<div class="empty-txt">오늘 할 일이 없어요.</div>'}
   </section>
   <section class="card">
@@ -747,8 +824,9 @@ function coachHTML() {
     <div class="coach"><div class="coach-face">${tone.face}</div>
       <button class="bubble" data-act="nudge"><div class="coach-name">${tone.name}</div><p>${esc(coachMsg())}</p><span class="hint">탭해서 다른 말 듣기</span></button>
     </div>
+    ${v.d < v.goal ? rewardHTML(v.d, v.goal) : ''}
   </section>
-  ${rewardHTML(v.d, v.goal)}`;
+  ${v.d >= v.goal ? rewardHTML(v.d, v.goal) : ''}`;
 }
 
 // 왼쪽: 가수 일정, 오른쪽: 내 일정(가수 일정이 아닌 모든 카테고리)
@@ -773,7 +851,7 @@ function ddayHTML() {
 function rewardHTML(done, goal) {
   const singer = esc(singerName());
   if (done < goal) {
-    return `<section class="card reward locked"><div class="rw-ic">🔒</div><div><b style="color:var(--ink)">${goal - done}개 더</b> 끝내면 오늘의 ${singer} 노래가 열려요</div></section>`;
+    return `<div class="rw-lock">🔒 <b>${goal - done}개 더</b> 끝내면 ${singer} 노래 열림</div>`;
   }
   const songs = (S.settings.songs || []).filter(s => safeUrl(s.url));
   if (!songs.length) {
@@ -907,22 +985,30 @@ function renderTasks() {
   };
   const labels = { active: '진행 중', today: '오늘', carried: '이월됨', done: '완료' };
   const list = groups[taskFilter] || groups.active;
-  const empty = { active: '할 일이 없어요. 위에서 추가해 보세요!', today: '오늘 마감인 할 일이 없어요.', carried: '미뤄진 일이 없어요. 훌륭해요! 👏', done: '아직 완료한 일이 없어요.' };
+  const empty = { active: '할 일이 없어요. 오른쪽 아래 + 버튼으로 추가해 보세요!', today: '오늘 마감인 할 일이 없어요.', carried: '미뤄진 일이 없어요. 훌륭해요! 👏', done: '아직 완료한 일이 없어요.' };
   return `
   <div class="top"><h1>할 일</h1></div>
   ${coachHTML()}
-  <section class="card">
-    <form data-form="add-task">
-      <div class="add-row" style="margin-top:0"><input type="text" name="text" placeholder="할 일을 입력하세요" maxlength="100" autocomplete="off" enterkeyhint="done"><button class="btn primary">추가</button></div>
-      <div class="add-opts"><div style="flex:1;min-width:0">${datePick('due', newTaskDue, { min: t, none: true })}</div><button type="button" class="pri-btn ${newTaskPri ? 'on' : ''}" data-act="pri" style="align-self:flex-start">★ 중요</button></div>
-      ${S.projects.length ? `<div class="add-opts"><select name="pid" aria-label="프로젝트"><option value="">프로젝트 없음</option>${[...S.projects].sort(projSort).map(p => `<option value="${esc(p.id)}">📁 ${esc(p.title)}</option>`).join('')}</select></div>` : ''}
-    </form>
-  </section>
   <div class="chips">${Object.keys(labels).map(k => `<button class="chip ${taskFilter === k ? 'on' : ''}" data-act="filter" data-f="${k}">${labels[k]}<span class="cnt">${groups[k].length}</span></button>`).join('')}</div>
   <section class="card">
     ${list.length ? `<ul class="list">${list.map(x => taskItem(x)).join('')}</ul>` : `<div class="empty-txt">${empty[taskFilter]}</div>`}
     ${taskFilter === 'done' && list.length ? '<button class="btn danger sm" style="margin-top:10px" data-act="clear-done">완료한 일 모두 지우기</button>' : ''}
-  </section>`;
+  </section>
+  <button class="fab" data-act="new-task" aria-label="할 일 추가">+</button>`;
+}
+
+function openTaskSheet() {
+  newTaskPri = false; newTaskDue = todayStr();
+  $('#sheet').innerHTML = `<div class="sheet-bg" data-act="close-bg"><div class="sheet" role="dialog" aria-label="할 일 추가">
+    <form data-form="add-task">
+      <h3>할 일 추가</h3>
+      <label class="f">할 일<input type="text" name="text" required maxlength="100" autocomplete="off" enterkeyhint="done"></label>
+      <div class="f"><span class="muted" style="font-weight:600;font-size:13px">마감일</span>${datePick('due', newTaskDue, { min: todayStr(), none: true })}</div>
+      ${S.projects.length ? `<label class="f">프로젝트<select name="pid" aria-label="프로젝트" style="margin-top:5px"><option value="">프로젝트 없음</option>${[...S.projects].sort(projSort).map(p => `<option value="${esc(p.id)}">📁 ${esc(p.title)}</option>`).join('')}</select></label>` : ''}
+      <div class="f"><button type="button" class="pri-btn" data-act="pri">★ 중요</button></div>
+      <div class="sheet-btns"><button type="button" class="btn ghost" data-act="close">취소</button><button class="btn primary">추가</button></div>
+    </form></div></div>`;
+  setTimeout(() => { const i = $('#sheet input[name=text]'); if (i) i.focus(); }, 50);
 }
 
 function renderSettings() {
@@ -946,6 +1032,18 @@ function renderSettings() {
     ${photo ? `<img class="photo-prev" src="${esc(photo)}" alt="응원 사진 미리보기">` : ''}
     <div class="btn-row"><label class="btn ghost sm file-btn">${photo ? '사진 바꾸기' : '사진 고르기'}<input type="file" accept="image/*" data-file="photo"></label>
     ${photo ? '<button class="btn danger sm" data-act="del-photo">사진 지우기</button>' : ''}</div>
+  </section>
+
+  <section class="card">
+    <h2>코치 알림 🔔</h2>
+    <p class="muted" style="margin:0 0 10px">정한 시간에 아직 안 끝낸 할 일을 코치가 알림으로 재촉해요. 그날 할 일이 없으면 알림이 오지 않아요.</p>
+    ${!/^https:/.test(PUSH_API) ? '<p class="muted" style="margin:0"><b>알림 서버 준비 중이에요.</b> 준비되면 여기에서 알림을 켤 수 있어요.</p>'
+      : S.ui.pushOn ? `<div class="btn-row"><button class="btn ghost sm" data-act="push-test">테스트 알림 보내기</button><button class="btn danger sm" data-act="push-off">알림 끄기</button></div>`
+      : `<button class="btn primary sm" data-act="push-on">알림 켜기</button>
+        ${window.navigator.standalone === false ? '<p class="muted" style="margin:8px 0 0">홈 화면에 추가한 gyeolsim 앱에서 켜야 알림이 와요.</p>' : ''}`}
+    <div class="lbl" style="font-weight:600;font-size:14px;margin:14px 0 6px">알림 받을 시간</div>
+    <div class="hours">${Array.from({ length: 18 }, (_, i) => i + 6).map(h => `<button class="hour ${alarmHours().includes(h) ? 'on' : ''}" data-act="alarm-hour" data-v="${h}">${h < 12 ? '오전' : '오후'} ${h % 12 || 12}시</button>`).join('')}</div>
+    <p class="muted" style="margin:8px 0 0">알림 내용은 앱을 마지막으로 열었을 때의 할 일 기준이에요. 할 일을 끝냈으면 앱에서 체크해 주세요.</p>
   </section>
 
   <section class="card" id="cats">
@@ -1037,6 +1135,15 @@ document.addEventListener('click', e => {
     case 'open-proj': tab = 'proj'; openProject = el.dataset.id; render(); window.scrollTo(0, 0); break;
     case 'close-proj': openProject = null; render(); window.scrollTo(0, 0); break;
     case 'new-proj': openProjectSheet(null); break;
+    case 'new-task': openTaskSheet(); break;
+    case 'push-on': enablePush(); break;
+    case 'push-off': disablePush(); break;
+    case 'push-test': testPush(); break;
+    case 'alarm-hour': {
+      const h = Number(el.dataset.v), hs = alarmHours();
+      S.settings.alarmHours = hs.includes(h) ? hs.filter(x => x !== h) : [...hs, h].sort((a, b) => a - b);
+      save(); render(); break;
+    }
     case 'edit-proj': openProjectSheet(projById(el.dataset.id)); break;
     case 'del-proj': {
       const p = projById(el.dataset.id); if (!p) break;
@@ -1152,7 +1259,8 @@ document.addEventListener('submit', e => {
     save(); closeSheet(); tab = 'proj'; openProject = p.id; render(); window.scrollTo(0, 0);
     toast(f.dataset.id ? '프로젝트를 수정했어요.' : '프로젝트를 만들었어요. 하나씩 끝내 보자!');
   } else if (k === 'add-task') {
-    if (addTask(el.text.value, el.due.value, newTaskPri, el.pid ? el.pid.value : null)) { newTaskPri = false; render(); toast('할 일을 추가했어요.'); const i = document.querySelector('[data-form=add-task] input[name=text]'); if (i) i.focus(); }
+    if (!el.text.value.trim()) { toast('할 일을 입력해 주세요.'); return; }
+    if (addTask(el.text.value, el.due.value, newTaskPri, el.pid ? el.pid.value : null)) { newTaskPri = false; closeSheet(); render(); toast('할 일을 추가했어요.'); }
   } else if (k === 'cat') {
     const color = hexOk(el.color.value) ? el.color.value : CAT_COLORS[0];
     const c = f.dataset.id && S.cats.find(x => x.id === f.dataset.id);
@@ -1213,7 +1321,7 @@ function importData(file) {
   reader.readAsText(file);
 }
 
-document.addEventListener('visibilitychange', () => { if (!document.hidden) render(); });
+document.addEventListener('visibilitychange', () => { if (!document.hidden) { render(); queuePushSync(); } });
 
 // 코치 말 주기적으로 바꾸기 (말풍선 글자만 바꿔서 입력 중인 내용은 그대로 둠)
 let renderedDay = todayStr();
@@ -1235,6 +1343,7 @@ if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
 }
 
 render();
+queuePushSync();
 })();
 </script>
 </body>

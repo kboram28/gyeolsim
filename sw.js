@@ -1,5 +1,5 @@
 // 앱 코드를 고친 뒤에는 아래 버전 숫자를 올려 주세요 (v1 → v2). 그래야 폰에 새 버전이 반영돼요.
-const CACHE = 'gyeolsim-v12';
+const CACHE = 'gyeolsim-v13';
 const ASSETS = ['./', './index.html', './manifest.json', './icons/icon-180.png', './icons/icon-192.png', './icons/icon-512.png'];
 
 self.addEventListener('install', e => {
@@ -30,4 +30,24 @@ self.addEventListener('fetch', e => {
 
   // 나머지(아이콘 등)는 캐시 우선
   e.respondWith(caches.match(req).then(hit => hit || fetch(req)));
+});
+
+// 코치 알림 (push 서버가 보낸 메시지 표시)
+self.addEventListener('push', e => {
+  let msg = {};
+  try { msg = e.data ? e.data.json() : {}; } catch (err) { msg = { body: e.data && e.data.text() }; }
+  e.waitUntil(self.registration.showNotification(msg.title || 'gyeolsim', {
+    body: msg.body || '오늘 할 일을 확인해 볼까?',
+    icon: './icons/icon-192.png',
+    badge: './icons/icon-192.png',
+    tag: 'coach'
+  }));
+});
+
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+    for (const c of list) if ('focus' in c) return c.focus();
+    return self.clients.openWindow('./');
+  }));
 });
