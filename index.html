@@ -473,7 +473,7 @@ function coachState() {
   return { sit, v };
 }
 /* ---------- 코치 알림 (push/worker.js 서버가 예약된 시간에 보냄) ---------- */
-const PUSH_API = 'REPLACE_WITH_WORKER_URL';
+const PUSH_API = 'https://gyeolsim-push.kboram28.workers.dev';
 const VAPID_PUBLIC = 'BIxOlEIR5pyobxPwy3sUNw_pffZJdHeWwA9Rv0X6hR1EvMwC1I5V6ADAKA7sWlCnfSQ-0FalW2P0tvyaNMR0Hg4';
 const alarmHours = () => (Array.isArray(S.settings.alarmHours) ? S.settings.alarmHours : []).filter(h => Number.isInteger(h) && h >= 0 && h <= 23).sort((a, b) => a - b);
 const pushSupported = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
