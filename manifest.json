@@ -1,0 +1,17 @@
+{
+  "name": "결심 - 일정·할 일 코치",
+  "short_name": "결심",
+  "description": "캘린더와 코치형 할 일 목록, 최애 노래 보상",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f6f4fb",
+  "theme_color": "#7c5cff",
+  "lang": "ko",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

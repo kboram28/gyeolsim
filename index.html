@@ -1,0 +1,1209 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#7c5cff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="결심">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<title>결심</title>
+<style>
+:root{
+  --bg:#f6f4fb;--card:#ffffff;--ink:#1d1b26;--sub:#6b6880;--line:#e7e3f2;
+  --pri:#7c5cff;--pri-ink:#ffffff;--pri-soft:#efeaff;
+  --fan:#e09a00;--fan-soft:#fff3d1;--me:#3d7ef5;--me-soft:#e6efff;
+  --warn:#e5484d;--warn-soft:#ffe9ea;--ok:#2fa36b;
+  --shadow:0 1px 2px rgba(30,15,80,.05),0 6px 20px rgba(30,15,80,.06);
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#121118;--card:#1c1a25;--ink:#f1effa;--sub:#a29fb5;--line:#2d2a3a;
+  --pri:#9b82ff;--pri-ink:#14111f;--pri-soft:#2a2342;
+  --fan:#ffc53d;--fan-soft:#3a2f12;--me:#6aa6ff;--me-soft:#1d2a44;
+  --warn:#ff6b70;--warn-soft:#3b1d20;--ok:#4cc38a;--shadow:none;
+}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink)}
+body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;font-size:15px;line-height:1.45;min-height:100vh;-webkit-font-smoothing:antialiased}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none;padding:0}
+select{font:inherit;font-size:16px;width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--ink);min-height:44px}
+input[type=text],input[type=url],input[type=date],input[type=time]{font-size:16px;width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--ink);-webkit-appearance:none;appearance:none;min-height:44px}
+input:focus{outline:2px solid var(--pri);outline-offset:-1px}
+main{max-width:560px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 14px) 16px calc(env(safe-area-inset-bottom) + 100px)}
+h1{font-size:24px;margin:0;letter-spacing:-.02em}
+h2{font-size:16px;margin:0 0 10px;letter-spacing:-.01em}
+.top{display:flex;justify-content:space-between;align-items:flex-end;margin:4px 2px 14px}
+.top .sub{color:var(--sub);font-size:13px}
+.card{background:var(--card);border-radius:20px;padding:16px;margin-bottom:12px;box-shadow:var(--shadow);border:1px solid var(--line)}
+.muted{color:var(--sub);font-size:13px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:42px;padding:0 16px;border-radius:12px;font-weight:600;text-decoration:none;white-space:nowrap}
+.btn.primary{background:var(--pri);color:var(--pri-ink)}
+.btn.ghost{background:var(--pri-soft);color:var(--pri)}
+.btn.danger{background:var(--warn-soft);color:var(--warn)}
+.btn.sm{min-height:34px;padding:0 12px;font-size:13px;border-radius:10px}
+.link{color:var(--pri);font-weight:600;text-decoration:underline}
+
+/* hero */
+.hero{padding:0;overflow:hidden}
+.hero-photo{display:block;width:100%;aspect-ratio:16/9;object-fit:cover}
+.coach{display:flex;gap:12px;align-items:flex-start;padding:16px}
+.coach-face{flex:none;width:48px;height:48px;border-radius:50%;background:var(--pri-soft);display:grid;place-items:center;font-size:26px}
+.bubble{flex:1;text-align:left;background:var(--pri-soft);border-radius:4px 16px 16px 16px;padding:10px 12px}
+.coach-name{font-size:12px;font-weight:700;color:var(--pri);margin-bottom:2px}
+.bubble p{margin:0;font-size:15.5px;font-weight:500}
+.bubble p.swap{animation:fade .4s}
+.bubble .hint{display:block;font-size:11px;color:var(--sub);margin-top:6px}
+
+/* stats */
+.stats{display:flex;gap:16px;align-items:center}
+.ring{--p:0;flex:none;width:74px;height:74px;border-radius:50%;background:conic-gradient(var(--pri) calc(var(--p)*1%),var(--line) 0);display:grid;place-items:center}
+.ring span{width:58px;height:58px;border-radius:50%;background:var(--card);display:grid;place-items:center;font-weight:800;font-size:17px}
+.stat-txt{flex:1}
+.stat-big{font-weight:700;margin-bottom:6px}
+.mini{display:flex;gap:14px;font-size:13px;color:var(--sub)}
+.mini b{color:var(--ink)}
+
+/* reward */
+.reward{display:flex;gap:12px;align-items:center}
+.reward.locked{background:var(--card);color:var(--sub)}
+.reward.open{background:linear-gradient(135deg,var(--pri-soft),var(--fan-soft))}
+.rw-ic{font-size:28px;flex:none}
+.rw-body{flex:1;min-width:0}
+.rw-label{font-size:12px;font-weight:700;color:var(--pri)}
+.rw-title{font-weight:700;font-size:16px;margin:2px 0 8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rw-btns{display:flex;gap:8px}
+
+/* dday */
+.dd-wrap{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.dd-wrap .card{margin-bottom:0}
+.dday{min-width:0;padding:14px;border-left:5px solid var(--fan)}
+.dd-label{font-size:12px;font-weight:700;color:var(--fan);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dd-num{font-weight:800;font-size:24px;color:var(--fan);white-space:nowrap;margin-top:2px;letter-spacing:-.02em}
+.dd-title{font-weight:700;font-size:15px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-all}
+
+/* lists */
+.sec-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.sec-head h2{margin:0}
+ul.list{list-style:none;margin:0;padding:0}
+.task,.ev{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.task:last-child,.ev:last-child{border-bottom:0}
+.chk{flex:none;width:28px;height:28px;border-radius:9px;border:2px solid var(--line);display:grid;place-items:center;font-weight:800;color:var(--pri-ink);font-size:15px}
+.task.done .chk{background:var(--pri);border-color:var(--pri)}
+.t-main{flex:1;min-width:0}
+.t-title{word-break:break-word}
+.task.done .t-title{text-decoration:line-through;color:var(--sub)}
+.t-meta{display:flex;gap:6px;margin-top:2px;flex-wrap:wrap}
+.star{color:var(--fan);margin-right:3px}
+.badge{font-size:11.5px;font-weight:600;padding:2px 7px;border-radius:999px;background:var(--line);color:var(--sub)}
+.badge.warn{background:var(--warn-soft);color:var(--warn)}
+.badge.hot{background:var(--pri-soft);color:var(--pri)}
+.badge.fan{background:var(--fan-soft);color:var(--fan)}
+.badge.me{background:var(--me-soft);color:var(--me)}
+.x{flex:none;width:34px;height:34px;border-radius:10px;color:var(--sub);font-size:14px}
+.ev-time{flex:none;width:46px;font-size:13px;font-weight:700;color:var(--sub)}
+.ev-bar{flex:none;width:4px;align-self:stretch;border-radius:4px;background:var(--c,var(--me))}
+.empty-txt{color:var(--sub);font-size:14px;padding:6px 0}
+
+/* forms */
+.add-row{display:flex;gap:8px;margin-top:10px}
+.add-row input[type=text]{flex:1}
+.add-row .btn{flex:none}
+.add-opts{display:flex;gap:8px;margin-top:8px;align-items:center}
+.dpf{min-width:0}
+.sheet div.f{margin-bottom:12px}
+.sheet div.f .dpf,.sheet div.f .tp{margin-top:5px}
+.tp{display:grid;grid-template-columns:3fr 2fr;gap:8px}
+.date-btn{display:block;width:100%;min-height:44px;padding:0 12px;border-radius:12px;border:1px solid var(--line);background:var(--bg);text-align:left;font-size:15px}
+.dp{margin-top:8px;padding:10px;border:1px solid var(--line);border-radius:14px;background:var(--bg)}
+.dp .cal-head{margin-bottom:4px}
+.dp .cell{aspect-ratio:auto;height:38px;padding-top:0;justify-content:center}
+.dp .cell:disabled{opacity:.3;cursor:default}
+.pri-btn{flex:none;min-height:44px;padding:0 14px;border-radius:12px;border:1px solid var(--line);font-weight:600;color:var(--sub);background:var(--bg)}
+.pri-btn.on{background:var(--fan-soft);border-color:var(--fan);color:var(--fan)}
+.chips{display:flex;gap:6px;overflow-x:auto;margin:0 0 12px;padding-bottom:2px}
+.chip{flex:none;padding:7px 14px;border-radius:999px;background:var(--card);border:1px solid var(--line);font-size:14px;font-weight:600;color:var(--sub)}
+.chip.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chip .cnt{margin-left:4px;opacity:.7}
+
+/* calendar */
+.cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.cal-head h2{margin:0;font-size:18px}
+.cal-nav{display:flex;gap:6px}
+.icon-btn{width:38px;height:38px;border-radius:12px;background:var(--bg);border:1px solid var(--line);font-size:16px;display:grid;place-items:center}
+.grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px}
+.wd{text-align:center;font-size:12px;color:var(--sub);padding:4px 0 6px;font-weight:600}
+.wd.sun,.cell.sun .num{color:var(--warn)}
+.wd.sat,.cell.sat .num{color:var(--me)}
+.cell{aspect-ratio:1/1.05;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:6px;gap:3px}
+.cell .num{font-size:14px;font-weight:600;width:26px;height:26px;display:grid;place-items:center;border-radius:50%}
+.cell.today .num{background:var(--pri);color:var(--pri-ink)!important}
+.cell.sel{background:var(--pri-soft)}
+.mcell{aspect-ratio:auto;min-height:76px;align-items:stretch;padding:4px 1px;gap:2px;min-width:0;overflow:hidden}
+.mcell .num{align-self:center;flex:none;width:24px;height:24px;font-size:13px}
+.ce{display:block;font-style:normal;font-size:10px;line-height:15px;padding:0 3px;border-radius:4px;text-align:left;white-space:nowrap;overflow:hidden;background:color-mix(in srgb,var(--c) 20%,transparent);border-left:2px solid var(--c);color:var(--ink)}
+.ce.more{background:none;border:0;color:var(--sub);text-align:center}
+.dots{display:flex;gap:3px;height:6px}
+.dot{width:6px;height:6px;border-radius:50%}
+.dot.cat{background:var(--c)}
+.dot.lg{width:14px;height:14px;flex:none}
+
+/* settings */
+.field{margin-bottom:14px}
+.field>label,.field>.lbl{display:block;font-weight:600;font-size:14px;margin-bottom:6px}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.seg-btn{padding:10px 6px;border-radius:12px;border:1px solid var(--line);background:var(--bg);text-align:center}
+.seg-btn .f{font-size:22px;display:block}
+.seg-btn .n{font-size:13px;font-weight:700}
+.seg-btn .d{font-size:11px;color:var(--sub);display:block}
+.seg-btn.on{border-color:var(--pri);background:var(--pri-soft)}
+.stepper{display:flex;align-items:center;gap:14px}
+.stepper b{font-size:20px;min-width:40px;text-align:center}
+.photo-prev{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:14px;display:block;margin-bottom:8px}
+.song{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}
+.song-t{flex:1;min-width:0}
+.song-t div{font-weight:600}
+.song-t small{display:block;color:var(--sub);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.song-form{display:grid;gap:8px;margin-top:10px}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap}
+.file-btn{position:relative;overflow:hidden}
+.file-btn input{position:absolute;inset:0;opacity:0;cursor:pointer}
+
+/* install banner */
+.install{background:var(--ink);color:var(--bg);border-radius:16px;padding:12px 14px;margin-bottom:12px;font-size:13.5px;display:flex;gap:10px;align-items:center}
+.install b{color:var(--bg)}
+.install button{color:var(--bg);opacity:.7;font-size:18px;flex:none;width:30px;height:30px}
+
+/* nav */
+nav{position:fixed;left:0;right:0;bottom:0;background:color-mix(in srgb,var(--card) 92%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid var(--line);padding:6px 8px calc(env(safe-area-inset-bottom) + 6px);display:flex;justify-content:space-around;z-index:20}
+nav button{flex:1;max-width:120px;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0;color:var(--sub);font-size:11px;font-weight:600}
+nav button svg{width:24px;height:24px}
+nav button.on{color:var(--pri)}
+
+/* sheet & toast */
+.sheet-bg{position:fixed;inset:0;background:rgba(10,5,30,.45);z-index:40;display:flex;align-items:flex-end;justify-content:center;animation:fade .15s}
+.sheet{background:var(--card);width:100%;max-width:560px;border-radius:22px 22px 0 0;padding:18px 16px calc(env(safe-area-inset-bottom) + 18px);animation:up .2s ease-out;max-height:90vh;overflow:auto}
+.sheet h3{margin:0 0 14px;font-size:18px}
+.sheet label.f{display:block;font-size:13px;font-weight:600;color:var(--sub);margin-bottom:12px}
+.sheet label.f input{margin-top:5px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.type-seg{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.type-seg label{position:relative}
+.type-seg input{position:absolute;opacity:0}
+.type-seg span{display:block;text-align:center;padding:11px 6px;border-radius:12px;border:1px solid var(--line);font-weight:600;font-size:14px}
+.type-seg .dot{display:inline-block;margin-right:5px;vertical-align:1px}
+.type-seg input:checked+span{border-color:var(--pri);background:var(--pri-soft);color:var(--pri)}
+.check{display:flex;align-items:center;gap:8px;font-size:14px;margin-bottom:16px}
+.check input{width:20px;height:20px;accent-color:var(--pri)}
+.sheet-btns{display:grid;grid-template-columns:1fr 2fr;gap:8px}
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 84px);transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:11px 16px;border-radius:14px;font-weight:600;font-size:14px;z-index:50;max-width:calc(100vw - 32px);text-align:center;animation:pop .2s ease-out;box-shadow:0 8px 24px rgba(0,0,0,.2)}
+.burst{position:fixed;bottom:-30px;font-size:26px;z-index:45;pointer-events:none;animation:rise 1.6s ease-out forwards}
+@keyframes rise{to{transform:translate(var(--dx),-75vh) rotate(25deg);opacity:0}}
+@keyframes up{from{transform:translateY(40px);opacity:0}}
+@keyframes fade{from{opacity:0}}
+@keyframes pop{from{transform:translate(-50%,10px);opacity:0}}
+/* projects */
+textarea{font:inherit;font-size:16px;width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--ink);resize:vertical;min-height:70px}
+.pj-card{display:block;width:100%;text-align:left;position:relative;padding-left:20px;overflow:hidden}
+.pj-card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:6px;background:var(--c,var(--pri))}
+.pj-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.pj-title{font-weight:700;font-size:16px;word-break:break-word}
+.pj-d{font-weight:800;color:var(--sub);white-space:nowrap;font-size:14px}
+.pbar{height:10px;border-radius:99px;background:var(--line);overflow:hidden;margin:10px 0 6px;position:relative}
+.pbar i{display:block;height:100%;border-radius:99px;background:var(--c,var(--pri));transition:width .3s}
+.pbar.thin{height:6px;margin:6px 0 4px}
+.pbar.time i{background:var(--sub);opacity:.45}
+.pj-row{display:flex;justify-content:space-between;font-size:13px;color:var(--sub);gap:8px}
+.pj-row b{color:var(--ink)}
+.st{font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:99px;white-space:nowrap}
+.st.ok{background:var(--me-soft);color:var(--me)}
+.st.behind,.st.late{background:var(--warn-soft);color:var(--warn)}
+.st.done{background:var(--pri-soft);color:var(--pri)}
+.st.empty{background:var(--line);color:var(--sub)}
+.badge.pj{background:color-mix(in srgb,var(--c) 16%,transparent);color:var(--c)}
+.dot.pj{background:var(--pri);border-radius:2px;transform:rotate(45deg)}
+.back{display:inline-flex;align-items:center;gap:4px;color:var(--pri);font-weight:600;margin:2px 0 8px;min-height:36px}
+.pj-big{display:flex;align-items:baseline;gap:8px}
+.pj-big b{font-size:40px;letter-spacing:-.03em;color:var(--c,var(--pri))}
+.mp{display:block;width:100%;text-align:left;padding:8px 0;border-bottom:1px solid var(--line)}
+.mp:last-child{border-bottom:0}
+.mp-title{color:var(--ink);font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.memo{white-space:pre-wrap;word-break:break-word;margin:0}
+.color-pick{display:flex;gap:10px;margin:4px 0 14px}
+.color-pick label{position:relative}
+.color-pick input{position:absolute;opacity:0}
+.color-pick span{display:block;width:34px;height:34px;border-radius:50%;background:var(--c);border:3px solid transparent;box-shadow:0 0 0 1px var(--line)}
+.color-pick input:checked+span{border-color:var(--card);box-shadow:0 0 0 2px var(--c)}
+.t-title[data-act]{cursor:text}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+</head>
+<body>
+<main id="app"></main>
+<nav id="nav">
+  <button data-act="tab" data-tab="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>홈</button>
+  <button data-act="tab" data-tab="cal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg>캘린더</button>
+  <button data-act="tab" data-tab="tasks"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m4 7 2 2 4-4M4 17l2 2 4-4M13 7h7M13 17h7"/></svg>할 일</button>
+  <button data-act="tab" data-tab="proj"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M8 14h8"/></svg>프로젝트</button>
+  <button data-act="tab" data-tab="set"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>설정</button>
+</nav>
+<div id="sheet"></div>
+
+<script>
+(() => {
+'use strict';
+const KEY = 'gyeolsim-v1';
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const pad = n => String(n).padStart(2, '0');
+const ymd = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const todayStr = () => ymd(new Date());
+const parseD = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+const daysBetween = (a, b) => Math.round((parseD(b) - parseD(a)) / 864e5);
+const WD = ['일','월','화','수','목','금','토'];
+const fmtMD = s => { const d = parseD(s); return `${d.getMonth() + 1}월 ${d.getDate()}일 (${WD[d.getDay()]})`; };
+const fmtShort = s => { const d = parseD(s); return `${d.getMonth() + 1}/${d.getDate()}`; };
+const safeUrl = u => /^https?:\/\//i.test(String(u || '').trim());
+const isDate = s => /^\d{4}-\d{2}-\d{2}$/.test(String(s || ''));
+
+/* ---------- 저장 ---------- */
+// 일정 카테고리: 'me'(기본)와 'fan'(가수 일정, D-day용)은 지울 수 없음
+// 파랑·노랑·빨강·초록·보라·분홍·갈색·회색: 색상(hue)이나 밝기가 서로 확실히 다르게
+const CAT_COLORS = ['#2f6fe0', '#e0a100', '#e03b3b', '#23a052', '#8e4fe0', '#e04fae', '#9a6a3a', '#6b7a8f'];
+// 예전 팔레트 → 새 팔레트
+const OLD_CAT_COLORS = { '#3d7ef5': '#2f6fe0', '#e09a00': '#e0a100', '#7c5cff': '#8e4fe0', '#2fa36b': '#23a052', '#e5484d': '#e03b3b', '#d6409f': '#e04fae', '#0fa3b1': '#6b7a8f', '#8a6f5a': '#9a6a3a' };
+const hexOk = s => /^#[0-9a-f]{6}$/i.test(String(s || ''));
+const defaultCats = () => [{ id: 'me', name: '내 일정', color: '#2f6fe0' }, { id: 'fan', name: '', color: '#e0a100' }];
+function normCats(list) {
+  const out = (Array.isArray(list) ? list : [])
+    .filter(c => c && c.id && hexOk(c.color))
+    .map(c => ({ id: String(c.id), name: String(c.name || '').slice(0, 12), color: OLD_CAT_COLORS[c.color.toLowerCase()] || c.color }));
+  for (const c of defaultCats().reverse()) if (!out.some(x => x.id === c.id)) out.unshift(c);
+  return out;
+}
+function defaults() {
+  return {
+    tasks: [], events: [], projects: [], cats: defaultCats(),
+    settings: { name: '', singer: '김결', tone: 'balanced', goal: 3, songs: [], photo: null },
+    stats: { points: 0, streak: 0, lastGoalDate: null },
+    ui: { installHidden: false }
+  };
+}
+function normalize(d) {
+  const b = defaults();
+  return {
+    tasks: Array.isArray(d.tasks) ? d.tasks.filter(t => t && t.id && t.title) : [],
+    events: Array.isArray(d.events) ? d.events.filter(e => e && e.id && isDate(e.date)) : [],
+    projects: Array.isArray(d.projects) ? d.projects.filter(p => p && p.id && p.title) : [],
+    cats: normCats(d.cats),
+    settings: { ...b.settings, ...(d.settings || {}) },
+    stats: { ...b.stats, ...(d.stats || {}) },
+    ui: { ...b.ui, ...(d.ui || {}) }
+  };
+}
+function load() {
+  try { const raw = localStorage.getItem(KEY); if (raw) return normalize(JSON.parse(raw)); } catch (e) {}
+  return defaults();
+}
+let S = load();
+function save() {
+  try { localStorage.setItem(KEY, JSON.stringify(S)); }
+  catch (e) { toast('저장 공간이 부족해요. 응원 사진을 지우거나 바꿔 보세요.'); }
+}
+if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+
+/* ---------- 화면 상태 ---------- */
+let tab = 'home';
+let calCursor = (() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); })();
+let selDay = todayStr();
+let taskFilter = 'active';
+let nudge = 0, coachTick = 0, rewardShift = 0, newTaskPri = false;
+let newTaskDue = todayStr(); // 할 일 추가 폼의 마감일 (기본: 오늘)
+let openProject = null;
+
+/* ---------- 코치 ---------- */
+const TONE = {
+  gentle:   { name: '다정한 코치', face: '🐰', desc: '부드럽게 응원' },
+  balanced: { name: '밀당 코치',   face: '🦊', desc: '칭찬 반 잔소리 반' },
+  strict:   { name: '호랑이 코치', face: '🐯', desc: '빡세게 재촉' }
+};
+const LINES = {
+  empty: {
+    gentle:   ['{nm}아직 할 일이 비어 있어. 오늘 하고 싶은 일 하나만 적어 볼까?', '적어 두기만 해도 마음이 가벼워져. 할 일부터 같이 정리해 보자.'],
+    balanced: ['{nm}할 일 목록이 텅 비었네? 적어야 시작하지. 하나만 적어 봐!', '오늘 뭐 할 거야? 적어 두면 내가 끝까지 챙겨 줄게.'],
+    strict:   ['할 일이 0개라는 건 계획이 없다는 거야. 당장 하나 적어.', '머릿속에만 있는 계획은 계획이 아니야. 적어.']
+  },
+  // 아래 {task}가 들어간 상황은 할 일마다 따로 만들어져 번갈아 나옴
+  crunch: {
+    gentle:   ['오늘이 {remain} 남았어. \'{task}\'는 어느 정도 했어? 조금이라도 해 두면 내일이 편해져.', '{nm}\'{task}\' 아직 남아 있네. 다 못 해도 괜찮으니 어디까지 했는지만 확인해 볼까?', '하루가 거의 끝나 가. \'{task}\' 딱 10분만 같이 해 보자.'],
+    balanced: ['오늘 {remain} 남았는데 \'{task}\' 아직 안 했지? 어느 정도 진행됐어?', '{nm}\'{task}\' 오늘 마감이야! 지금 시작하면 자기 전에 끝낼 수 있어.', '시계 봐, {remain} 남았어. \'{task}\' 끝내고 {singer} 노래 듣자.'],
+    strict:   ['오늘 {remain} 남았어. \'{task}\' 아직이야? 지금 몇 % 했는지 말해 봐.', '{nm}\'{task}\' 오늘 안에 끝낸다. 남은 시간 {remain}, 지금 시작해.', '내일로 넘기면 또 미루게 돼. \'{task}\' 지금 해.']
+  },
+  carried: {
+    gentle:   ['\'{task}\'가 {c}일째 넘어오고 있어. 오늘은 조금만이라도 해 볼까?', '\'{task}\' 계속 미뤄졌지? 너무 크면 작게 나눠서 해 보자.'],
+    balanced: ['\'{task}\' 벌써 {c}일째 이월이야. 오늘은 끝내 보자!', '\'{task}\' 또 넘어왔네? 딱 10분만 붙잡아 보자.', '어제의 내가 남긴 \'{task}\'… 오늘의 내가 정리해 주자.'],
+    strict:   ['\'{task}\' {c}일째 미루는 중. 오늘도 넘기면 {c1}일째야.', '\'{task}\' 이월 {c}일째. 변명 말고 지금 해.']
+  },
+  today: {
+    gentle:   ['오늘은 \'{task}\' 하는 날이야. 천천히 시작해 볼까?', '{nm}\'{task}\' 오늘 하기로 했지? 할 수 있어!'],
+    balanced: ['오늘 \'{task}\' 해야 하지? 미리 끝내 두면 저녁이 편해.', '\'{task}\' 지금 하면 오늘 목표 {d}/{goal}에 하나 더!', '{nm}\'{task}\'부터 해치우자. 끝나면 점수 들어온다!'],
+    strict:   ['\'{task}\' 오늘 마감이야. 미루지 말고 지금.', '\'{task}\' 아직 손도 안 댔지? 바로 시작.']
+  },
+  upcoming: {
+    gentle:   ['\'{task}\' 마감이 {dd}야. 오늘 조금 해 두면 마음이 편해.'],
+    balanced: ['\'{task}\' {dd}! 오늘 미리 시작하면 여유 있게 끝내.'],
+    strict:   ['\'{task}\' {dd}. 마감 직전에 몰아서 하지 말고 오늘 시작해.']
+  },
+  behind: {
+    gentle:   ['\'{p}\' 기간은 {tp}% 지났는데 진행률은 {pct}%야. 오늘 세부 할 일 하나만 같이 해 볼까?', '\'{p}\'가 조금 밀렸지만 괜찮아. 작은 거 하나부터 다시 시작하자.'],
+    balanced: ['\'{p}\' 진행률 {pct}%, 시간은 {tp}% 지났어. 슬슬 속도 내자!', '\'{p}\'가 살짝 밀리고 있어. 오늘 하나만 끝내도 그래프가 달라져.'],
+    strict:   ['\'{p}\' 기간 {tp}% 지났는데 진행률 {pct}%? 오늘 최소 하나는 끝낸다.', '\'{p}\' 이대로면 마감 못 맞춰. 지금 세부 할 일 하나.']
+  },
+  projDone: {
+    gentle:   ['\'{p}\' 프로젝트 완주! 정말 대단해 💜 +50점'],
+    balanced: ['\'{p}\' 프로젝트 클리어! 오늘은 {singer} 노래로 자축하자 🎉 +50점'],
+    strict:   ['\'{p}\' 완료. 끝까지 해냈네, 인정. +50점']
+  },
+  start: {
+    gentle:   ['{nm}좋은 하루! 오늘은 {goal}개만 해 보자. 천천히 해도 괜찮아.', '오늘도 와 줘서 고마워. 작은 것 하나부터 시작해 볼까?'],
+    balanced: ['{nm}오늘 목표 {goal}개! 다 채우면 {singer} 노래가 보상으로 기다리고 있어.', '첫 번째가 제일 어려워. 딱 5분만 해 보자, 그다음은 쉬워져.'],
+    strict:   ['오늘 목표는 {goal}개. 시작 안 하면 0개야. 지금 바로 첫 번째.', '고민할 시간에 하나 끝낸다. 오늘 {goal}개, 출발.']
+  },
+  progress: {
+    gentle:   ['벌써 {d}개나 했어, 정말 잘하고 있어! {left}개만 더 해 볼까?', '한 걸음씩 잘 가고 있어. 무리하지 말고 {left}개 더!'],
+    balanced: ['{d}/{goal} 완료! {left}개만 더 하면 {singer} 노래 해금이야.', '흐름 탔다! 이 기세로 {left}개 더 가자.'],
+    strict:   ['{d}개 했으면 {left}개 남았지. 쉬는 건 다 끝내고.', '좋아, 근데 아직이야. {left}개 더.']
+  },
+  goalDone: {
+    gentle:   ['대단해! 오늘 목표를 다 이뤘어. 스스로를 꼭 칭찬해 줘 💜', '정말 수고 많았어. {singer} 노래 들으면서 푹 쉬어.'],
+    balanced: ['오늘 목표 {goal}개 클리어! 수고했어, 이제 {singer} 노래 들으면서 쉬자 🎧', '완벽해! 오늘의 너는 칭찬받아 마땅해.'],
+    strict:   ['목표 달성. 인정할게, 오늘은 잘했어. {singer} 노래 들어도 좋아.', '해냈네. 이 정도면 내일도 할 수 있다는 뜻이야.']
+  },
+  done: {
+    gentle:   ['잘했어! +{pts}점 💜', '정말 멋져! +{pts}점', '한 걸음 더 갔어! +{pts}점'],
+    balanced: ['나이스! +{pts}점', '하나 해치웠다! +{pts}점', '이 맛에 하는 거지! +{pts}점'],
+    strict:   ['좋아. 다음. +{pts}점', '+{pts}점. 멈추지 마.', '하나 끝. 계속 가. +{pts}점']
+  }
+};
+const fill = (t, v) => t.replace(/\{(\w+)\}/g, (_, k) => v[k] ?? '');
+const hash = s => { let h = 0; for (const c of s) h = (h * 31 + c.charCodeAt(0)) | 0; return Math.abs(h); };
+function line(sit, v, salt = 0) {
+  const set = LINES[sit][S.settings.tone] || LINES[sit].balanced;
+  return fill(set[(hash(todayStr() + sit) + salt) % set.length], v);
+}
+const singerName = () => (S.settings.singer || '').trim() || '최애';
+const goalN = () => Math.min(10, Math.max(1, Number(S.settings.goal) || 3));
+const doneToday = () => { const t = todayStr(); return S.tasks.filter(x => x.done && x.doneAt === t).length; };
+
+const CRUNCH_HOUR = 18; // 이 시각부터 오늘 마감인 일을 재촉
+function remainTxt() {
+  const n = new Date(), m = 24 * 60 - (n.getHours() * 60 + n.getMinutes());
+  return m >= 60 ? `${Math.floor(m / 60)}시간${m % 60 ? ' ' + (m % 60) + '분' : ''}` : `${m}분`;
+}
+// 상황 + 할 일마다 대사를 만들어 둠 (template 순서로 돌면서 할 일이 번갈아 나오게)
+function linesFor(sit, v, tasks) {
+  const set = LINES[sit][S.settings.tone] || LINES[sit].balanced;
+  if (!tasks) return set.map(tp => fill(tp, v));
+  const out = [];
+  for (const tp of set) for (const x of tasks) {
+    const c = x.carry || 0;
+    out.push(fill(tp, { ...v, task: x.title, c, c1: c + 1, dd: x.due ? ddayTxt(daysBetween(todayStr(), x.due)) : '' }));
+  }
+  return out;
+}
+function coachPool() {
+  const { sit, v } = coachState();
+  const t = todayStr(), h = new Date().getHours();
+  const active = todoTasks().filter(x => !x.done);
+  const urgent =(a, b) => (b.priority === 'high') - (a.priority === 'high') || (b.carry || 0) - (a.carry || 0) || taskSort(a, b);
+  const dueToday = active.filter(x => x.due === t).sort(urgent).slice(0, 3);
+  const carried = active.filter(x => x.carry).sort(urgent).slice(0, 3);
+  const soon = active.filter(x => x.due && x.due > t && daysBetween(t, x.due) <= 3).sort(taskSort).slice(0, 2);
+  if (sit === 'empty') return linesFor('empty', v);
+  const sits = [];
+  if (h >= CRUNCH_HOUR && dueToday.length) sits.push(['crunch', dueToday]);
+  if (carried.length) sits.push(['carried', carried]);
+  if (h < CRUNCH_HOUR && dueToday.length) sits.push(['today', dueToday]);
+  if (v.p) sits.push(['behind']);
+  if (v.d >= v.goal) sits.push(['goalDone']);
+  if (soon.length) sits.push(['upcoming', soon]);
+  sits.push([v.d > 0 ? 'progress' : 'start']);
+  // 가장 급한 두 상황만 섞어서 돌림
+  return sits.slice(0, 2).flatMap(([s, tk]) => linesFor(s, { ...v, remain: remainTxt() }, tk));
+}
+const coachMsg = () => { const p = coachPool(); return p[(coachTick + nudge) % p.length]; };
+
+function coachState() {
+  const t = todayStr(), h = new Date().getHours();
+  const active = todoTasks().filter(x => !x.done);
+  const dueToday = active.filter(x => x.due === t);
+  const d = doneToday(), goal = goalN();
+  const v = { nm: S.settings.name ? S.settings.name.trim() + ', ' : '', singer: singerName(), goal, d, left: Math.max(0, goal - d), hour: h, r: dueToday.length };
+  // 가장 많이 밀린 프로젝트
+  let worst = null;
+  for (const p of S.projects) {
+    const s = projStats(p);
+    if (s.status === 'behind' || s.status === 'late') {
+      const gap = (s.timePct ?? 100) - s.pct;
+      if (!worst || gap > worst.gap) worst = { p, s, gap };
+    }
+  }
+  if (worst) { v.p = worst.p.title; v.pct = worst.s.pct; v.tp = worst.s.timePct ?? 100; }
+  const sit = !active.length && d < goal ? 'empty' : d >= goal ? 'goalDone' : d > 0 ? 'progress' : 'start';
+  return { sit, v };
+}
+function curStreak() {
+  const last = S.stats.lastGoalDate; if (!last) return 0;
+  const y = new Date(); y.setDate(y.getDate() - 1);
+  return (last === todayStr() || last === ymd(y)) ? S.stats.streak : 0;
+}
+
+/* ---------- 일정 ---------- */
+const occurs = (ev, ds) => ev.yearly ? (ev.date.slice(5) === ds.slice(5) && ds >= ev.date) : ev.date === ds;
+const eventsOn = ds => S.events.filter(e => occurs(e, ds)).sort((a, b) => (a.time || '99').localeCompare(b.time || '99'));
+function nextOccurrence(ev, from) {
+  if (!ev.yearly) return ev.date >= from ? ev.date : null;
+  const y = +from.slice(0, 4); let c = `${y}${ev.date.slice(4)}`;
+  if (c < from) c = `${y + 1}${ev.date.slice(4)}`;
+  if (c < ev.date) c = ev.date;
+  return c;
+}
+function nextEvent(fan) {
+  const t = todayStr(); let best = null;
+  for (const e of S.events) {
+    if ((e.type === 'fan') !== fan) continue;
+    const d = nextOccurrence(e, t);
+    if (d && (!best || d < best.d)) best = { e, d };
+  }
+  return best;
+}
+
+const catById = id => S.cats.find(c => c.id === id) || S.cats.find(c => c.id === 'me');
+const catName = c => c.id === 'fan' ? `⭐ ${singerName()}` : c.name;
+
+/* ---------- 프로젝트 ---------- */
+const PJ_COLORS = ['#7c5cff', '#3d7ef5', '#2fa36b', '#e09a00', '#e5484d', '#d6409f'];
+const projById = id => S.projects.find(p => p.id === id);
+const pjColor = p => PJ_COLORS.includes(p && p.color) ? p.color : PJ_COLORS[0];
+const ST_LABEL = { done: '완료 🎉', late: '마감 지남', behind: '뒤처짐', ok: '순항 중', empty: '세부 할 일 없음' };
+function projStats(p) {
+  const subs = S.tasks.filter(t => t.projectId === p.id);
+  const total = subs.length, done = subs.filter(t => t.done).length;
+  const pct = total ? Math.round(done / total * 100) : 0;
+  const t = todayStr();
+  let timePct = null, dleft = null;
+  if (isDate(p.end)) {
+    dleft = daysBetween(t, p.end);
+    if (isDate(p.start) && p.end > p.start) {
+      const all = daysBetween(p.start, p.end), el = daysBetween(p.start, t);
+      timePct = Math.min(100, Math.max(0, Math.round(el / all * 100)));
+    }
+  }
+  let status;
+  if (total && done === total) status = 'done';
+  else if (!total) status = 'empty';
+  else if (dleft !== null && dleft < 0) status = 'late';
+  else if (timePct !== null && pct + 15 < timePct) status = 'behind';
+  else status = 'ok';
+  return { subs, total, done, pct, timePct, dleft, status };
+}
+const ddayTxt = n => n === null ? '' : n < 0 ? `${-n}일 지남` : n === 0 ? 'D-DAY' : `D-${n}`;
+function projSort(a, b) {
+  const sa = projStats(a), sb = projStats(b);
+  if ((sa.status === 'done') !== (sb.status === 'done')) return sa.status === 'done' ? 1 : -1;
+  return (a.end || '9999-12-31').localeCompare(b.end || '9999-12-31');
+}
+function projCard(p) {
+  const s = projStats(p);
+  return `<button class="card pj-card" style="--c:${pjColor(p)}" data-act="open-proj" data-id="${esc(p.id)}">
+    <div class="pj-top"><div class="pj-title">${esc(p.title)}</div><span class="st ${s.status}">${ST_LABEL[s.status]}</span></div>
+    <div class="pbar"><i style="width:${s.pct}%"></i></div>
+    <div class="pj-row"><span><b>${s.pct}%</b> · 세부 ${s.done}/${s.total}</span><span>${s.timePct !== null ? `기간 ${s.timePct}% 경과 · ` : ''}${ddayTxt(s.dleft)}</span></div>
+  </button>`;
+}
+
+/* ---------- 할 일 ---------- */
+// 할 일 목록에 보일지: 프로젝트 세부 할 일은 마감 당일(또는 오늘 끝낸 것)만
+const inTodo = x => !x.projectId || x.due === todayStr() || (x.done && x.doneAt === todayStr());
+const todoTasks = () => S.tasks.filter(inTodo);
+function taskSort(a, b) {
+  const ad = a.due || '9999-12-31', bd = b.due || '9999-12-31';
+  if (ad !== bd) return ad < bd ? -1 : 1;
+  if (a.priority !== b.priority) return a.priority === 'high' ? -1 : 1;
+  return (a.createdAt || 0) - (b.createdAt || 0);
+}
+function dueBadge(t) {
+  if (!t.due) return '';
+  if (t.done) return `<span class="badge">${fmtShort(t.due)}</span>`;
+  const n = daysBetween(todayStr(), t.due);
+  if (t.carry) return `<span class="badge warn">${t.carry}일째 이월</span>`;
+  if (n < 0) return `<span class="badge warn">${-n}일 지남</span>`;
+  if (n === 0) return `<span class="badge hot">오늘</span>`;
+  return `<span class="badge">D-${n}</span>`;
+}
+function taskItem(t, hideProj) {
+  const p = !hideProj && t.projectId ? projById(t.projectId) : null;
+  return `<li class="task ${t.done ? 'done' : ''}">
+    <button class="chk" data-act="toggle" data-id="${esc(t.id)}" aria-label="${t.done ? '완료 취소' : '완료'}">${t.done ? '✓' : ''}</button>
+    <div class="t-main"><div class="t-title" data-act="edit-task" data-id="${esc(t.id)}">${t.priority === 'high' ? '<span class="star">★</span>' : ''}${esc(t.title)}</div>
+    <div class="t-meta">${p ? `<span class="badge pj" style="--c:${pjColor(p)}">📁 ${esc(p.title)}</span>` : ''}${dueBadge(t)}</div></div>
+    <button class="x" data-act="del-task" data-id="${esc(t.id)}" aria-label="삭제">✕</button></li>`;
+}
+function addTask(title, due, pri, projectId) {
+  title = title.trim(); if (!title) return false;
+  S.tasks.push({ id: uid(), title: title.slice(0, 100), due: isDate(due) ? due : null, priority: pri ? 'high' : 'normal', done: false, doneAt: null, createdAt: Date.now(), projectId: projectId && projById(projectId) ? projectId : null });
+  save(); return true;
+}
+// 프로젝트의 마지막 세부 할 일을 끝냈는지 확인 (보너스는 프로젝트당 한 번)
+function checkProjectDone(t) {
+  const p = t.projectId && projById(t.projectId);
+  if (!p || p.bonusGiven) return false;
+  if (projStats(p).status !== 'done') return false;
+  p.bonusGiven = true; S.stats.points += 50;
+  return p;
+}
+function toggleTask(id) {
+  const t = S.tasks.find(x => x.id === id); if (!t) return;
+  if (!t.done) {
+    const before = doneToday();
+    let pts = 10;
+    if (t.priority === 'high') pts += 5;
+    if (t.due && t.due >= todayStr() && !t.carry) pts += 5;
+    t.done = true; t.doneAt = todayStr(); t.pts = pts;
+    S.stats.points += pts;
+    const goal = goalN();
+    const goalHit = before < goal && before + 1 >= goal;
+    if (goalHit) {
+      const td = todayStr();
+      if (S.stats.lastGoalDate !== td) {
+        const y = new Date(); y.setDate(y.getDate() - 1);
+        S.stats.streak = S.stats.lastGoalDate === ymd(y) ? S.stats.streak + 1 : 1;
+        S.stats.lastGoalDate = td;
+      }
+    }
+    const pDone = checkProjectDone(t);
+    if (goalHit || pDone) {
+      save(); render(); burst();
+      toast(pDone ? line('projDone', { p: pDone.title, singer: singerName() }) : line('goalDone', coachState().v));
+      return;
+    }
+    const p = t.projectId && projById(t.projectId);
+    const extra = p ? ` · '${p.title}' ${projStats(p).pct}%` : '';
+    toast(line('done', { pts }, Math.floor(Math.random() * 3)) + extra);
+  } else {
+    t.done = false; t.doneAt = null;
+    S.stats.points = Math.max(0, S.stats.points - (t.pts || 0)); t.pts = 0;
+  }
+  save(); render();
+}
+
+/* ---------- 렌더 ---------- */
+// 마감이 지난 안 끝난 할 일은 오늘로 넘기고, 넘어온 날수를 carry에 쌓음
+// 프로젝트 세부 할 일은 넘기지 않고 프로젝트 안에 '지남'으로 남김
+function rollover() {
+  const t = todayStr(); let ch = false;
+  for (const x of S.tasks) {
+    if (x.projectId && x.carry) { // 예전 버전에서 넘겨 버린 세부 할 일은 원래 마감일로 되돌림
+      const d = parseD(x.due); d.setDate(d.getDate() - x.carry); x.due = ymd(d); x.carry = 0; ch = true;
+    }
+    if (!x.projectId && !x.done && isDate(x.due) && x.due < t) { x.carry = (x.carry || 0) + daysBetween(x.due, t); x.due = t; ch = true; }
+  }
+  if (newTaskDue < t) newTaskDue = t;
+  if (ch) save();
+}
+
+function render() {
+  rollover();
+  document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
+  const app = $('#app');
+  if (openProject && !projById(openProject)) openProject = null;
+  app.innerHTML = tab === 'home' ? renderHome() : tab === 'cal' ? renderCal() : tab === 'tasks' ? renderTasks()
+    : tab === 'proj' ? (openProject ? renderProjectDetail(projById(openProject)) : renderProjects()) : renderSettings();
+}
+
+function renderProjects() {
+  const list = [...S.projects].sort(projSort);
+  return `
+  <div class="top"><h1>프로젝트</h1><button class="btn primary sm" data-act="new-proj">+ 새 프로젝트</button></div>
+  ${list.length ? list.map(projCard).join('') : `<section class="card">
+    <h2>한 달짜리 목표를 프로젝트로 만들어 보세요</h2>
+    <p class="muted" style="margin:0 0 12px">예: '정처기 실기 합격', '포트폴리오 완성'처럼 기간이 긴 목표를 만들고 세부 할 일을 넣으면, 진행률(%)과 기간이 얼마나 지났는지 함께 보여 드려요. 진행이 기간보다 밀리면 코치가 알려 줘요.</p>
+    <button class="btn primary" data-act="new-proj">첫 프로젝트 만들기</button></section>`}`;
+}
+
+function renderProjectDetail(p) {
+  const s = projStats(p), c = pjColor(p);
+  const subs = [...s.subs].sort((a, b) => (a.done - b.done) || taskSort(a, b));
+  const period = [p.start ? fmtMD(p.start) : '', p.end ? fmtMD(p.end) : ''].filter(Boolean).join(' ~ ');
+  const gapMsg = s.status === 'behind' ? `기간보다 ${s.timePct - s.pct}%p 밀려 있어요. 오늘 하나만 끝내도 따라잡을 수 있어요.`
+    : s.status === 'late' ? '마감일이 지났어요. 남은 일을 정리하거나 마감일을 다시 잡아 보세요.'
+    : s.status === 'done' ? '모든 세부 할 일을 끝냈어요. 수고했어요!'
+    : s.status === 'empty' ? '아래에서 세부 할 일을 추가하면 진행률이 계산돼요.'
+    : s.timePct !== null ? (s.pct >= s.timePct ? '기간보다 앞서 가고 있어요. 좋아요!' : '거의 계획대로 가고 있어요.') : '';
+  return `
+  <button class="back" data-act="close-proj">‹ 프로젝트 목록</button>
+  <div class="top" style="margin-top:0"><div><div class="sub">${esc(period) || '기간 미정'}${s.dleft !== null ? ' · ' + ddayTxt(s.dleft) : ''}</div><h1>${esc(p.title)}</h1></div></div>
+  <section class="card" style="--c:${c}">
+    <div class="pj-top"><div class="pj-big"><b>${s.pct}%</b><span class="muted">세부 할 일 ${s.done}/${s.total} 완료</span></div><span class="st ${s.status}">${ST_LABEL[s.status]}</span></div>
+    <div class="pbar"><i style="width:${s.pct}%"></i></div>
+    ${s.timePct !== null ? `<div class="pj-row"><span>기간 경과</span><span><b>${s.timePct}%</b></span></div><div class="pbar thin time"><i style="width:${s.timePct}%"></i></div>` : ''}
+    ${gapMsg ? `<p class="muted" style="margin:8px 0 0">${gapMsg}</p>` : ''}
+  </section>
+  ${p.memo ? `<section class="card"><h2>메모</h2><p class="memo">${esc(p.memo)}</p></section>` : ''}
+  <section class="card">
+    <h2>세부 할 일</h2>
+    ${subs.length ? `<ul class="list">${subs.map(t => taskItem(t, true)).join('')}</ul>` : '<div class="empty-txt">아직 세부 할 일이 없어요.</div>'}
+    <form data-form="sub-task" data-pid="${esc(p.id)}">
+      <div class="add-row"><input type="text" name="text" placeholder="세부 할 일 추가" maxlength="100" autocomplete="off" enterkeyhint="done"><button class="btn primary">추가</button></div>
+      <div class="add-opts"><div style="flex:1;min-width:0">${datePick('due', '', { min: todayStr(), max: p.end || '', none: true })}</div></div>
+    </form>
+  </section>
+  <div class="btn-row"><button class="btn ghost" data-act="edit-proj" data-id="${esc(p.id)}">프로젝트 수정</button><button class="btn danger" data-act="del-proj" data-id="${esc(p.id)}">삭제</button></div>`;
+}
+
+function openProjectSheet(p) {
+  const isNew = !p;
+  const start = p ? p.start || '' : todayStr();
+  const end = p ? p.end || '' : (() => { const d = new Date(); d.setDate(d.getDate() + 30); return ymd(d); })();
+  const color = p ? pjColor(p) : PJ_COLORS[S.projects.length % PJ_COLORS.length];
+  $('#sheet').innerHTML = `<div class="sheet-bg" data-act="close-bg"><div class="sheet" role="dialog" aria-label="${isNew ? '새 프로젝트' : '프로젝트 수정'}">
+    <form data-form="project" data-id="${p ? esc(p.id) : ''}">
+      <h3>${isNew ? '새 프로젝트' : '프로젝트 수정'}</h3>
+      <label class="f">프로젝트 이름<input type="text" name="text" required maxlength="40" value="${p ? esc(p.title) : ''}" placeholder="예: 정처기 실기 합격하기" autocomplete="off"></label>
+      <div class="f"><span class="muted" style="font-weight:600;font-size:13px">시작일</span>${datePick('start', start, { none: true })}</div>
+      <div class="f"><span class="muted" style="font-weight:600;font-size:13px">마감일</span>${datePick('end', end, { none: true })}</div>
+      <div class="f muted" style="font-weight:600;font-size:13px">색상</div>
+      <div class="color-pick">${PJ_COLORS.map(cl => `<label><input type="radio" name="color" value="${cl}" ${cl === color ? 'checked' : ''}><span style="--c:${cl}"></span></label>`).join('')}</div>
+      <label class="f">메모 (선택)<textarea name="memo" maxlength="1000" placeholder="목표, 참고 링크, 다짐 등">${p ? esc(p.memo || '') : ''}</textarea></label>
+      ${isNew ? `<label class="f">세부 할 일 (선택, 한 줄에 하나씩)<textarea name="subs" maxlength="2000" placeholder="기출 2020년 풀기&#10;SQL 정리&#10;오답 노트 복습"></textarea></label>` : ''}
+      <div class="sheet-btns"><button type="button" class="btn ghost" data-act="close">취소</button><button class="btn primary">${isNew ? '만들기' : '저장'}</button></div>
+    </form></div></div>`;
+  if (isNew) setTimeout(() => { const i = $('#sheet input[name=text]'); if (i) i.focus(); }, 50);
+}
+
+// 이번 달과 기간이 겹치는 프로젝트 (기간 미정이면 아직 안 끝난 것만)
+function monthProjects() {
+  const t = todayStr(), ms = t.slice(0, 8) + '01', me = t.slice(0, 8) + '31';
+  return S.projects.filter(p => {
+    if (!p.start && !p.end) return projStats(p).status !== 'done';
+    return (p.start || '0000-00-00') <= me && (p.end || '9999-12-31') >= ms;
+  }).sort(projSort);
+}
+
+function renderHome() {
+  const t = todayStr(), now = new Date();
+  const d = doneToday(), goal = goalN();
+  const pct = Math.min(100, Math.round(d / goal * 100));
+  const evs = eventsOn(t);
+  const projs = monthProjects();
+  const todays = S.tasks.filter(x => x.due === t && (!x.done || x.doneAt === t)).sort((a, b) => (a.done - b.done) || taskSort(a, b));
+  const standalone = window.navigator.standalone || matchMedia('(display-mode: standalone)').matches;
+
+  return `
+  <div class="top"><div><div class="sub">${now.getMonth() + 1}월 ${now.getDate()}일 ${WD[now.getDay()]}요일</div><h1>${S.settings.name ? esc(S.settings.name) + '의 ' : ''}결심</h1></div></div>
+  ${!standalone && !S.ui.installHidden ? `<div class="install"><div>📲 Safari <b>공유 버튼</b> → <b>홈 화면에 추가</b>를 누르면 앱처럼 쓸 수 있어요.</div><button data-act="hide-install" aria-label="닫기">✕</button></div>` : ''}
+  <button class="card stats" style="width:100%;text-align:left" data-act="tab" data-tab="tasks">
+    <div class="ring" style="--p:${pct}"><span>${d}/${goal}</span></div>
+    <div class="stat-txt"><div class="stat-big">오늘 목표 ${pct}%</div>
+      <div class="mini"><span>⭐ <b>${S.stats.points}</b>점</span><span>🔥 <b>${curStreak()}</b>일 연속</span></div></div>
+  </button>
+  <section class="card">
+    <div class="sec-head"><h2>오늘 할 일</h2><button class="btn ghost sm" data-act="tab" data-tab="tasks">+ 할 일</button></div>
+    ${todays.length ? `<ul class="list">${todays.map(x => taskItem(x)).join('')}</ul>` : '<div class="empty-txt">오늘 할 일이 없어요.</div>'}
+  </section>
+  <section class="card">
+    <div class="sec-head"><h2>${now.getMonth() + 1}월 목표</h2><button class="btn ghost sm" data-act="tab" data-tab="proj">전체</button></div>
+    ${projs.length ? projs.map(p => {
+      const s = projStats(p);
+      return `<button class="mp" style="--c:${pjColor(p)}" data-act="open-proj" data-id="${esc(p.id)}">
+        <div class="pj-row"><span class="mp-title">${esc(p.title)}</span><span><b>${s.pct}%</b>${s.dleft !== null ? ' · ' + ddayTxt(s.dleft) : ''}</span></div>
+        <div class="pbar thin"><i style="width:${s.pct}%"></i></div></button>`;
+    }).join('') : '<div class="empty-txt">이번 달 진행 중인 목표가 없어요.</div>'}
+  </section>
+  <section class="card">
+    <div class="sec-head"><h2>오늘 일정</h2><button class="btn ghost sm" data-act="add-event" data-d="${t}">+ 일정</button></div>
+    ${evs.length ? `<ul class="list">${evs.map(evItem).join('')}</ul>` : '<div class="empty-txt">오늘 잡힌 일정이 없어요.</div>'}
+  </section>`;
+}
+
+function coachHTML() {
+  const { v } = coachState();
+  const tone = TONE[S.settings.tone] || TONE.balanced;
+  const photo = (S.settings.photo || '').startsWith('data:image/') ? S.settings.photo : '';
+  return `<section class="card hero">
+    ${photo ? `<img class="hero-photo" src="${esc(photo)}" alt="응원 사진">` : ''}
+    <div class="coach"><div class="coach-face">${tone.face}</div>
+      <button class="bubble" data-act="nudge"><div class="coach-name">${tone.name}</div><p>${esc(coachMsg())}</p><span class="hint">탭해서 다른 말 듣기</span></button>
+    </div>
+  </section>
+  ${rewardHTML(v.d, v.goal)}`;
+}
+
+// 왼쪽: 가수 일정, 오른쪽: 내 일정(가수 일정이 아닌 모든 카테고리)
+function ddayHTML() {
+  const half = (fan, label, emptyTxt) => {
+    const nx = nextEvent(fan);
+    const color = nx ? catById(nx.e.type).color : catById(fan ? 'fan' : 'me').color;
+    if (!nx) return `<div class="card dday" style="--fan:${color}"><div class="dd-label">${label}</div><div class="muted" style="margin-top:4px">${emptyTxt}</div></div>`;
+    const n = daysBetween(todayStr(), nx.d);
+    return `<div class="card dday" style="--fan:${color}"><div class="dd-label">${label}</div>
+      <div class="dd-num">${n === 0 ? 'D-DAY' : 'D-' + n}</div>
+      <div class="dd-title">${esc(nx.e.title)}</div>
+      <div class="muted">${fmtShort(nx.d)} (${WD[parseD(nx.d).getDay()]})${nx.e.time ? ' · ' + esc(nx.e.time) : ''}</div></div>`;
+  };
+  return `<div class="dd-wrap">
+    ${half(true, `⭐ ${esc(singerName())}`, `생일·공연 같은 ${esc(singerName())} 일정을 등록해 보세요.`)}
+    ${half(false, '📌 내 일정', '다가오는 내 일정이 없어요.')}
+  </div>`;
+}
+
+function rewardHTML(done, goal) {
+  const singer = esc(singerName());
+  if (done < goal) {
+    return `<section class="card reward locked"><div class="rw-ic">🔒</div><div><b style="color:var(--ink)">${goal - done}개 더</b> 끝내면 오늘의 ${singer} 노래가 열려요</div></section>`;
+  }
+  const songs = (S.settings.songs || []).filter(s => safeUrl(s.url));
+  if (!songs.length) {
+    return `<section class="card reward open"><div class="rw-ic">🎁</div><div>보상 해금! <button class="link" data-act="tab" data-tab="set">설정</button>에서 ${singer} 노래 링크를 등록하면 여기서 바로 들을 수 있어요.</div></section>`;
+  }
+  const s = songs[(hash(todayStr()) + rewardShift) % songs.length];
+  return `<section class="card reward open"><div class="rw-ic">🎧</div><div class="rw-body">
+    <div class="rw-label">오늘의 보상 해금!</div><div class="rw-title">${esc(s.title || singerName() + ' 노래')}</div>
+    <div class="rw-btns"><a class="btn primary sm" href="${esc(s.url.trim())}" target="_blank" rel="noopener">▶ 들으러 가기</a>
+    ${songs.length > 1 ? '<button class="btn ghost sm" data-act="reroll">다른 곡</button>' : ''}</div></div></section>`;
+}
+
+function evItem(e) {
+  const c = catById(e.type);
+  return `<li class="ev" style="--c:${c.color}">
+    <div class="ev-time">${e.time ? esc(e.time) : '종일'}</div><div class="ev-bar"></div>
+    <div class="t-main"><div class="t-title">${esc(e.title)}</div>
+    <div class="t-meta"><span class="badge pj">${esc(catName(c))}</span>${e.yearly ? '<span class="badge">매년</span>' : ''}</div></div>
+    <button class="x" data-act="del-event" data-id="${esc(e.id)}" aria-label="삭제">✕</button></li>`;
+}
+
+function renderCal() {
+  const y = calCursor.getFullYear(), m = calCursor.getMonth();
+  const start = new Date(y, m, 1).getDay(), dim = new Date(y, m + 1, 0).getDate();
+  const t = todayStr();
+  let cells = WD.map((w, i) => `<div class="wd ${i === 0 ? 'sun' : i === 6 ? 'sat' : ''}">${w}</div>`).join('');
+  for (let i = 0; i < start; i++) cells += '<div></div>';
+  for (let d = 1; d <= dim; d++) {
+    const ds = `${y}-${pad(m + 1)}-${pad(d)}`;
+    // 칸 안에 일정 제목을 2개까지, 나머지는 +N
+    const items = [
+      ...eventsOn(ds).map(e => ({ title: e.title, color: catById(e.type).color })),
+      ...S.projects.filter(p => p.end === ds).map(p => ({ title: '📁 ' + p.title, color: pjColor(p) }))
+    ];
+    const dow = (start + d - 1) % 7;
+    cells += `<button class="cell mcell ${ds === t ? 'today' : ''} ${ds === selDay ? 'sel' : ''} ${dow === 0 ? 'sun' : dow === 6 ? 'sat' : ''}" data-act="day" data-d="${ds}">
+      <span class="num">${d}</span>${items.slice(0, 2).map(x => `<i class="ce" style="--c:${x.color}">${esc(x.title)}</i>`).join('')}${items.length > 2 ? `<i class="ce more">+${items.length - 2}</i>` : ''}</button>`;
+  }
+  const evs = eventsOn(selDay);
+  const pjs = S.projects.filter(p => p.end === selDay);
+  return `
+  <div class="top"><h1>캘린더</h1></div>
+  ${ddayHTML()}
+  <section class="card">
+    <div class="cal-head"><h2>${y}년 ${m + 1}월</h2>
+      <div class="cal-nav"><button class="icon-btn" data-act="prev" aria-label="이전 달">‹</button><button class="icon-btn" data-act="cal-today" aria-label="오늘" style="font-size:12px;font-weight:700">오늘</button><button class="icon-btn" data-act="next" aria-label="다음 달">›</button></div></div>
+    <div class="grid">${cells}</div>
+  </section>
+  <section class="card">
+    <div class="sec-head"><h2>${fmtMD(selDay)}</h2><button class="btn ghost sm" data-act="add-event" data-d="${selDay}">+ 일정</button></div>
+    ${evs.length ? `<ul class="list">${evs.map(evItem).join('')}</ul>` : '<div class="empty-txt">일정이 없어요.</div>'}
+    ${pjs.length ? `<h2 style="margin-top:14px">프로젝트 마감</h2>${pjs.map(projCard).join('')}` : ''}
+  </section>`;
+}
+
+/* ---------- 미니 달력 (할 일 마감일) ---------- */
+/* ---------- 날짜·시간 선택 (모든 폼 공용) ---------- */
+function dueLabel(ds) {
+  if (!ds) return '📅 날짜 없음';
+  const n = daysBetween(todayStr(), ds);
+  return `📅 ${fmtMD(ds)}${n === 0 ? ' · 오늘' : n === 1 ? ' · 내일' : ''}`;
+}
+// 버튼을 누르면 아래에 미니 달력이 열림. 고른 값은 hidden input(name)에 들어감
+// opts: min, max (YYYY-MM-DD), none (날짜 없음 허용)
+function datePick(name, value, opts = {}) {
+  return `<div class="dpf" data-min="${esc(opts.min || '')}" data-max="${esc(opts.max || '')}" data-none="${opts.none ? 1 : ''}">
+    <input type="hidden" name="${name}" value="${esc(value || '')}">
+    <button type="button" class="date-btn" data-act="dp-toggle" aria-expanded="false">${dueLabel(value)}</button>
+    <div class="dp-box"></div></div>`;
+}
+function dpHTML(f) {
+  const [y, m] = f.dataset.cur.split('-').map(Number);
+  const val = f.querySelector('input').value, { min, max, none } = f.dataset, t = todayStr();
+  const start = new Date(y, m - 1, 1).getDay(), dim = new Date(y, m, 0).getDate();
+  let cells = WD.map((w, i) => `<div class="wd ${i === 0 ? 'sun' : i === 6 ? 'sat' : ''}">${w}</div>`).join('');
+  for (let i = 0; i < start; i++) cells += '<div></div>';
+  for (let d = 1; d <= dim; d++) {
+    const ds = `${y}-${pad(m)}-${pad(d)}`, dow = (start + d - 1) % 7;
+    const off = (min && ds < min) || (max && ds > max);
+    cells += `<button type="button" class="cell ${ds === t ? 'today' : ''} ${ds === val ? 'sel' : ''} ${dow === 0 ? 'sun' : dow === 6 ? 'sat' : ''}" data-act="dp-pick" data-d="${ds}" ${off ? 'disabled' : ''}><span class="num">${d}</span></button>`;
+  }
+  const todayOk = !(min && t < min) && !(max && t > max);
+  return `<div class="dp">
+    <div class="cal-head"><b>${y}년 ${m}월</b><div class="cal-nav"><button type="button" class="icon-btn" data-act="dp-move" data-v="-1" aria-label="이전 달">‹</button><button type="button" class="icon-btn" data-act="dp-move" data-v="1" aria-label="다음 달">›</button></div></div>
+    <div class="grid">${cells}</div>
+    ${todayOk || none ? `<div class="btn-row" style="margin-top:8px">${todayOk ? `<button type="button" class="btn ghost sm" data-act="dp-pick" data-d="${t}">오늘</button>` : ''}${none ? '<button type="button" class="btn ghost sm" data-act="dp-pick" data-d="">날짜 없음</button>' : ''}</div>` : ''}
+  </div>`;
+}
+// 입력 중인 다른 칸이 지워지지 않게 달력 부분만 다시 그림
+function dpSet(f, open) {
+  if (open) document.querySelectorAll('.dpf').forEach(o => { if (o !== f) dpSet(o, false); });
+  f.querySelector('.dp-box').innerHTML = open ? dpHTML(f) : '';
+  f.querySelector('.date-btn').innerHTML = dueLabel(f.querySelector('input').value);
+  f.querySelector('.date-btn').setAttribute('aria-expanded', open);
+}
+// 시간: 시·분 드롭다운. 시를 '시간 없음'으로 두면 종일 일정
+function timePick(value) {
+  const [h, mi] = /^\d{2}:\d{2}$/.test(value || '') ? value.split(':') : ['', '00'];
+  const hl = n => `${n < 12 ? '오전' : '오후'} ${n % 12 || 12}시`;
+  return `<div class="tp">
+    <select name="th" aria-label="시"><option value="">시간 없음 (종일)</option>${Array.from({ length: 24 }, (_, n) => `<option value="${pad(n)}" ${pad(n) === h ? 'selected' : ''}>${hl(n)}</option>`).join('')}</select>
+    <select name="tm" aria-label="분">${Array.from({ length: 12 }, (_, n) => pad(n * 5)).map(v => `<option value="${v}" ${v === mi ? 'selected' : ''}>${v}분</option>`).join('')}</select></div>`;
+}
+const timeVal = el => el.th.value ? `${el.th.value}:${el.tm.value || '00'}` : '';
+
+function renderTasks() {
+  const t = todayStr();
+  const groups = {
+    active:  todoTasks().filter(x => !x.done).sort(taskSort),
+    today:   todoTasks().filter(x => !x.done && x.due === t).sort(taskSort),
+    carried: todoTasks().filter(x => !x.done && x.carry).sort(taskSort),
+    done:    todoTasks().filter(x => x.done).sort((a, b) => (b.doneAt || '').localeCompare(a.doneAt || ''))
+  };
+  const labels = { active: '진행 중', today: '오늘', carried: '이월됨', done: '완료' };
+  const list = groups[taskFilter] || groups.active;
+  const empty = { active: '할 일이 없어요. 위에서 추가해 보세요!', today: '오늘 마감인 할 일이 없어요.', carried: '미뤄진 일이 없어요. 훌륭해요! 👏', done: '아직 완료한 일이 없어요.' };
+  return `
+  <div class="top"><h1>할 일</h1></div>
+  ${coachHTML()}
+  <section class="card">
+    <form data-form="add-task">
+      <div class="add-row" style="margin-top:0"><input type="text" name="text" placeholder="할 일을 입력하세요" maxlength="100" autocomplete="off" enterkeyhint="done"><button class="btn primary">추가</button></div>
+      <div class="add-opts"><div style="flex:1;min-width:0">${datePick('due', newTaskDue, { min: t, none: true })}</div><button type="button" class="pri-btn ${newTaskPri ? 'on' : ''}" data-act="pri" style="align-self:flex-start">★ 중요</button></div>
+      ${S.projects.length ? `<div class="add-opts"><select name="pid" aria-label="프로젝트"><option value="">프로젝트 없음</option>${[...S.projects].sort(projSort).map(p => `<option value="${esc(p.id)}">📁 ${esc(p.title)}</option>`).join('')}</select></div>` : ''}
+    </form>
+  </section>
+  <div class="chips">${Object.keys(labels).map(k => `<button class="chip ${taskFilter === k ? 'on' : ''}" data-act="filter" data-f="${k}">${labels[k]}<span class="cnt">${groups[k].length}</span></button>`).join('')}</div>
+  <section class="card">
+    ${list.length ? `<ul class="list">${list.map(x => taskItem(x)).join('')}</ul>` : `<div class="empty-txt">${empty[taskFilter]}</div>`}
+    ${taskFilter === 'done' && list.length ? '<button class="btn danger sm" style="margin-top:10px" data-act="clear-done">완료한 일 모두 지우기</button>' : ''}
+  </section>`;
+}
+
+function renderSettings() {
+  const st = S.settings;
+  const photo = (st.photo || '').startsWith('data:image/') ? st.photo : '';
+  return `
+  <div class="top"><h1>설정</h1></div>
+  <section class="card">
+    <div class="field"><label for="f-name">코치가 부를 내 이름</label><input id="f-name" type="text" data-set="name" value="${esc(st.name)}" placeholder="예: 결심러" maxlength="12"></div>
+    <div class="field"><label for="f-singer">최애 가수</label><input id="f-singer" type="text" data-set="singer" value="${esc(st.singer)}" placeholder="가수 이름" maxlength="20"></div>
+    <div class="field"><span class="lbl">코치 스타일</span><div class="seg">
+      ${Object.entries(TONE).map(([k, o]) => `<button class="seg-btn ${st.tone === k ? 'on' : ''}" data-act="tone" data-v="${k}"><span class="f">${o.face}</span><span class="n">${o.name}</span><span class="d">${o.desc}</span></button>`).join('')}
+    </div></div>
+    <div class="field" style="margin-bottom:0"><span class="lbl">하루 목표 (완료할 할 일 개수)</span>
+      <div class="stepper"><button class="icon-btn" data-act="goal" data-v="-1" aria-label="줄이기">−</button><b>${goalN()}개</b><button class="icon-btn" data-act="goal" data-v="1" aria-label="늘리기">+</button></div></div>
+  </section>
+
+  <section class="card">
+    <h2>응원 사진</h2>
+    <p class="muted" style="margin:0 0 10px">할 일 탭 맨 위 코치 카드에 보여요. 사진은 이 폰에만 저장돼요.</p>
+    ${photo ? `<img class="photo-prev" src="${esc(photo)}" alt="응원 사진 미리보기">` : ''}
+    <div class="btn-row"><label class="btn ghost sm file-btn">${photo ? '사진 바꾸기' : '사진 고르기'}<input type="file" accept="image/*" data-file="photo"></label>
+    ${photo ? '<button class="btn danger sm" data-act="del-photo">사진 지우기</button>' : ''}</div>
+  </section>
+
+  <section class="card" id="cats">
+    <div class="sec-head"><h2>일정 카테고리</h2>${S.cats.length < 12 ? '<button class="btn ghost sm" data-act="new-cat">+ 추가</button>' : ''}</div>
+    <p class="muted" style="margin:0 0 6px">캘린더 점과 일정 목록에 이 색상이 쓰여요. 눌러서 이름과 색상을 바꿀 수 있어요.</p>
+    ${S.cats.map(c => `<div class="song"><i class="dot cat lg" style="--c:${c.color}"></i>
+      <button class="song-t" style="text-align:left" data-act="edit-cat" data-id="${esc(c.id)}"><div>${esc(catName(c))}</div><small>${S.events.filter(e => catById(e.type).id === c.id).length}개 일정</small></button>
+      ${c.id === 'me' || c.id === 'fan' ? '' : `<button class="x" data-act="del-cat" data-id="${esc(c.id)}" aria-label="삭제">✕</button>`}</div>`).join('')}
+  </section>
+
+  <section class="card">
+    <h2>보상 노래 (${esc(singerName())})</h2>
+    <p class="muted" style="margin:0 0 6px">하루 목표를 채우면 이 중 한 곡이 열려요. 유튜브나 음원 앱 공유 링크를 붙여 넣으세요.</p>
+    ${(st.songs || []).map((s, i) => `<div class="song"><div class="song-t"><div>${esc(s.title || '제목 없음')}</div><small>${esc(s.url)}</small></div><button class="x" data-act="del-song" data-i="${i}" aria-label="삭제">✕</button></div>`).join('') || '<div class="empty-txt">아직 등록한 노래가 없어요.</div>'}
+    <form class="song-form" data-form="add-song">
+      <input type="text" name="stitle" placeholder="노래 제목" maxlength="60" autocomplete="off">
+      <input type="url" name="surl" placeholder="https://youtu.be/..." autocomplete="off" inputmode="url">
+      <button class="btn primary">노래 추가</button>
+    </form>
+  </section>
+
+  <section class="card">
+    <h2>데이터</h2>
+    <p class="muted" style="margin:0 0 10px">모든 기록은 이 폰 안에만 저장돼요. 가끔 백업 파일을 내보내 두면 안전해요.</p>
+    <div class="btn-row">
+      <button class="btn ghost sm" data-act="export">백업 내보내기</button>
+      <label class="btn ghost sm file-btn">백업 불러오기<input type="file" accept="application/json,.json" data-file="import"></label>
+      <button class="btn danger sm" data-act="reset">전체 초기화</button>
+    </div>
+  </section>`;
+}
+
+/* ---------- 시트 / 토스트 ---------- */
+function openEventSheet(date) {
+  $('#sheet').innerHTML = `<div class="sheet-bg" data-act="close-bg"><div class="sheet" role="dialog" aria-label="일정 추가">
+    <form data-form="event">
+      <h3>일정 추가</h3>
+      <label class="f">제목<input type="text" name="text" required maxlength="60" placeholder="예: 팀 회의, ${esc(singerName())} 콘서트" autocomplete="off"></label>
+      <div class="f"><span class="muted" style="font-weight:600;font-size:13px">날짜</span>${datePick('date', date)}</div>
+      <div class="f"><span class="muted" style="font-weight:600;font-size:13px">시간 (선택)</span>${timePick('')}</div>
+      <div class="sec-head"><span class="muted" style="font-weight:600">카테고리</span><button type="button" class="link" style="font-size:13px" data-act="manage-cats">카테고리·색상 관리</button></div>
+      <div class="type-seg">
+        ${S.cats.map(c => `<label><input type="radio" name="type" value="${esc(c.id)}" ${c.id === 'me' ? 'checked' : ''}><span><i class="dot cat" style="--c:${c.color}"></i>${esc(catName(c))}</span></label>`).join('')}
+      </div>
+      <label class="check"><input type="checkbox" name="yearly"> 매년 반복 (생일·데뷔일 등)</label>
+      <div class="sheet-btns"><button type="button" class="btn ghost" data-act="close">취소</button><button class="btn primary">저장</button></div>
+    </form></div></div>`;
+  setTimeout(() => { const i = $('#sheet input[name=text]'); if (i) i.focus(); }, 50);
+}
+function openCatSheet(c) {
+  const isNew = !c, color = c && CAT_COLORS.includes(c.color) ? c.color : CAT_COLORS[S.cats.length % CAT_COLORS.length];
+  $('#sheet').innerHTML = `<div class="sheet-bg" data-act="close-bg"><div class="sheet" role="dialog" aria-label="${isNew ? '새 카테고리' : '카테고리 수정'}">
+    <form data-form="cat" data-id="${c ? esc(c.id) : ''}">
+      <h3>${isNew ? '새 카테고리' : '카테고리 수정'}</h3>
+      ${c && c.id === 'fan' ? `<p class="muted" style="margin:0 0 12px">⭐ ${esc(singerName())} 일정은 이름이 가수 이름으로 정해져 있어요. 색상만 바꿀 수 있어요.</p>`
+        : `<label class="f">이름<input type="text" name="text" required maxlength="12" value="${c ? esc(c.name) : ''}" placeholder="예: 학교, 알바, 운동" autocomplete="off"></label>`}
+      <div class="f muted" style="font-weight:600;font-size:13px">색상</div>
+      <div class="color-pick" style="flex-wrap:wrap">${CAT_COLORS.map(cl => `<label><input type="radio" name="color" value="${cl}" ${cl === color ? 'checked' : ''}><span style="--c:${cl}"></span></label>`).join('')}</div>
+      <div class="sheet-btns"><button type="button" class="btn ghost" data-act="close">취소</button><button class="btn primary">${isNew ? '만들기' : '저장'}</button></div>
+    </form></div></div>`;
+  if (isNew) setTimeout(() => { const i = $('#sheet input[name=text]'); if (i) i.focus(); }, 50);
+}
+const closeSheet = () => { $('#sheet').innerHTML = ''; };
+
+let toastTimer;
+function toast(msg) {
+  document.querySelectorAll('.toast').forEach(t => t.remove());
+  const el = document.createElement('div'); el.className = 'toast'; el.textContent = msg;
+  document.body.appendChild(el);
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => el.remove(), 2600);
+}
+function burst() {
+  const emo = ['💜', '🎵', '⭐', '🎉', '✨', '🎧'];
+  for (let i = 0; i < 18; i++) {
+    const s = document.createElement('span'); s.className = 'burst'; s.textContent = emo[i % emo.length];
+    s.style.left = (5 + Math.random() * 90) + 'vw';
+    s.style.animationDelay = (Math.random() * .35) + 's';
+    s.style.setProperty('--dx', (Math.random() * 80 - 40) + 'px');
+    document.body.appendChild(s); setTimeout(() => s.remove(), 2100);
+  }
+}
+
+/* ---------- 이벤트 ---------- */
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-act]'); if (!el) return;
+  const a = el.dataset.act;
+  if (a === 'close-bg' && e.target !== el) return;
+  switch (a) {
+    case 'tab': tab = el.dataset.tab; nudge = 0; openProject = null; newTaskDue = todayStr(); render(); window.scrollTo(0, 0); break;
+    case 'open-proj': tab = 'proj'; openProject = el.dataset.id; render(); window.scrollTo(0, 0); break;
+    case 'close-proj': openProject = null; render(); window.scrollTo(0, 0); break;
+    case 'new-proj': openProjectSheet(null); break;
+    case 'edit-proj': openProjectSheet(projById(el.dataset.id)); break;
+    case 'del-proj': {
+      const p = projById(el.dataset.id); if (!p) break;
+      const n = S.tasks.filter(t => t.projectId === p.id).length;
+      if (confirm(`'${p.title}' 프로젝트를 지울까요?${n ? `\n세부 할 일 ${n}개도 함께 지워져요.` : ''}`)) {
+        S.tasks = S.tasks.filter(t => t.projectId !== p.id);
+        S.projects = S.projects.filter(x => x.id !== p.id);
+        openProject = null; save(); render(); toast('프로젝트를 지웠어요.');
+      }
+      break;
+    }
+    case 'edit-task': {
+      const t = S.tasks.find(x => x.id === el.dataset.id); if (!t) break;
+      const v = prompt('할 일 이름 바꾸기', t.title);
+      if (v !== null && v.trim()) { t.title = v.trim().slice(0, 100); save(); render(); }
+      break;
+    }
+    case 'toggle': toggleTask(el.dataset.id); break;
+    case 'del-task': {
+      const t = S.tasks.find(x => x.id === el.dataset.id);
+      if (t && confirm(`'${t.title}' 할 일을 지울까요?`)) {
+        if (t.done) S.stats.points = Math.max(0, S.stats.points - (t.pts || 0));
+        S.tasks = S.tasks.filter(x => x.id !== t.id); save(); render();
+      }
+      break;
+    }
+    case 'clear-done':
+      if (confirm('완료한 할 일을 모두 지울까요? (점수는 그대로 유지돼요)')) { S.tasks = S.tasks.filter(x => !x.done); save(); render(); }
+      break;
+    case 'del-event': {
+      const ev = S.events.find(x => x.id === el.dataset.id);
+      if (ev && confirm(`'${ev.title}' 일정을 지울까요?${ev.yearly ? '\n(매년 반복되는 일정 전체가 지워져요)' : ''}`)) { S.events = S.events.filter(x => x.id !== ev.id); save(); render(); }
+      break;
+    }
+    case 'day': selDay = el.dataset.d; render(); break;
+    case 'prev': calCursor = new Date(calCursor.getFullYear(), calCursor.getMonth() - 1, 1); render(); break;
+    case 'next': calCursor = new Date(calCursor.getFullYear(), calCursor.getMonth() + 1, 1); render(); break;
+    case 'cal-today': { const d = new Date(); calCursor = new Date(d.getFullYear(), d.getMonth(), 1); selDay = todayStr(); render(); break; }
+    case 'add-event': openEventSheet(el.dataset.d || selDay); break;
+    case 'close': case 'close-bg': closeSheet(); break;
+    case 'nudge': nudge++; render(); break;
+    case 'reroll': rewardShift++; render(); break;
+    case 'hide-install': S.ui.installHidden = true; save(); render(); break;
+    case 'pri': newTaskPri = !newTaskPri; el.classList.toggle('on', newTaskPri); break;
+    case 'filter': taskFilter = el.dataset.f; render(); break;
+    case 'dp-toggle': {
+      const f = el.closest('.dpf'), open = !f.querySelector('.dp');
+      if (open) f.dataset.cur = (f.querySelector('input').value || todayStr()).slice(0, 7);
+      dpSet(f, open); break;
+    }
+    case 'dp-move': {
+      const f = el.closest('.dpf'), [y, m] = f.dataset.cur.split('-').map(Number);
+      const d = new Date(y, m - 1 + Number(el.dataset.v), 1);
+      f.dataset.cur = `${d.getFullYear()}-${pad(d.getMonth() + 1)}`; dpSet(f, true); break;
+    }
+    case 'dp-pick': {
+      const f = el.closest('.dpf'); f.querySelector('input').value = el.dataset.d;
+      if (f.closest('[data-form=add-task]')) newTaskDue = el.dataset.d;
+      dpSet(f, false); break;
+    }
+    case 'tone': S.settings.tone = el.dataset.v; save(); render(); toast(`${TONE[el.dataset.v].face} ${TONE[el.dataset.v].name}가 맡을게요!`); break;
+    case 'goal': S.settings.goal = Math.min(10, Math.max(1, goalN() + Number(el.dataset.v))); save(); render(); break;
+    case 'new-cat': openCatSheet(null); break;
+    case 'edit-cat': { const c = S.cats.find(x => x.id === el.dataset.id); if (c) openCatSheet(c); break; }
+    case 'del-cat': {
+      const c = S.cats.find(x => x.id === el.dataset.id); if (!c || c.id === 'me' || c.id === 'fan') break;
+      const evs = S.events.filter(e => e.type === c.id);
+      if (confirm(`'${c.name}' 카테고리를 지울까요?${evs.length ? `\n이 카테고리 일정 ${evs.length}개는 '내 일정'으로 바뀌어요.` : ''}`)) {
+        evs.forEach(e => { e.type = 'me'; });
+        S.cats = S.cats.filter(x => x.id !== c.id); save(); render();
+      }
+      break;
+    }
+    case 'manage-cats': closeSheet(); tab = 'set'; openProject = null; render(); { const s = $('#cats'); if (s) s.scrollIntoView(); } break;
+    case 'del-song': S.settings.songs.splice(Number(el.dataset.i), 1); save(); render(); break;
+    case 'del-photo': if (confirm('응원 사진을 지울까요?')) { S.settings.photo = null; save(); render(); } break;
+    case 'export': exportData(); break;
+    case 'reset':
+      if (confirm('모든 할 일, 일정, 설정을 지울까요? 되돌릴 수 없어요.') && confirm('정말 초기화할까요?')) { S = defaults(); save(); tab = 'home'; render(); toast('초기화했어요.'); }
+      break;
+  }
+});
+
+document.addEventListener('submit', e => {
+  e.preventDefault();
+  const f = e.target, k = f.dataset.form, el = f.elements;
+  if (k === 'sub-task') {
+    if (addTask(el.text.value, el.due.value, false, f.dataset.pid)) {
+      render(); toast('세부 할 일을 추가했어요.');
+      const i = document.querySelector('[data-form=sub-task] input[name=text]'); if (i) i.focus();
+    }
+  } else if (k === 'project') {
+    const title = el.text.value.trim(); if (!title) { toast('프로젝트 이름을 입력해 주세요.'); return; }
+    let start = isDate(el.start.value) ? el.start.value : null, end = isDate(el.end.value) ? el.end.value : null;
+    if (start && end && end < start) { toast('마감일이 시작일보다 빨라요.'); return; }
+    const color = PJ_COLORS.includes(el.color.value) ? el.color.value : PJ_COLORS[0];
+    const memo = el.memo.value.trim().slice(0, 1000);
+    let p = f.dataset.id && projById(f.dataset.id);
+    if (p) { Object.assign(p, { title: title.slice(0, 40), start, end, color, memo }); }
+    else {
+      p = { id: uid(), title: title.slice(0, 40), start, end, color, memo, createdAt: Date.now(), bonusGiven: false };
+      S.projects.push(p);
+      (el.subs ? el.subs.value : '').split('\n').map(s => s.trim()).filter(Boolean).slice(0, 50)
+        .forEach(s => addTask(s, null, false, p.id));
+    }
+    save(); closeSheet(); tab = 'proj'; openProject = p.id; render(); window.scrollTo(0, 0);
+    toast(f.dataset.id ? '프로젝트를 수정했어요.' : '프로젝트를 만들었어요. 하나씩 끝내 보자!');
+  } else if (k === 'add-task') {
+    if (addTask(el.text.value, el.due.value, newTaskPri, el.pid ? el.pid.value : null)) { newTaskPri = false; render(); toast('할 일을 추가했어요.'); const i = document.querySelector('[data-form=add-task] input[name=text]'); if (i) i.focus(); }
+  } else if (k === 'cat') {
+    const color = hexOk(el.color.value) ? el.color.value : CAT_COLORS[0];
+    const c = f.dataset.id && S.cats.find(x => x.id === f.dataset.id);
+    const name = el.text ? el.text.value.trim().slice(0, 12) : '';
+    if (el.text && !name) { toast('카테고리 이름을 입력해 주세요.'); return; }
+    if (c) { c.color = color; if (el.text) c.name = name; }
+    else S.cats.push({ id: uid(), name, color });
+    save(); closeSheet(); render(); toast(c ? '카테고리를 수정했어요.' : '카테고리를 만들었어요.');
+  } else if (k === 'add-song') {
+    const title = el.stitle.value.trim(), url = el.surl.value.trim();
+    if (!safeUrl(url)) { toast('http:// 또는 https:// 로 시작하는 링크를 넣어 주세요.'); return; }
+    S.settings.songs.push({ title: title || singerName() + ' 노래', url }); save(); render(); toast('보상 노래를 추가했어요 🎵');
+  } else if (k === 'event') {
+    const title = el.text.value.trim(), date = el.date.value;
+    if (!title || !isDate(date)) { toast('제목과 날짜를 입력해 주세요.'); return; }
+    S.events.push({ id: uid(), title: title.slice(0, 60), date, time: timeVal(el), type: catById(el.type.value).id, yearly: el.yearly.checked });
+    save(); closeSheet(); selDay = date; render(); toast('일정을 추가했어요.');
+  }
+});
+
+document.addEventListener('change', e => {
+  const el = e.target;
+  if (el.dataset.set) { S.settings[el.dataset.set] = el.value.trim(); save(); return; }
+  if (el.dataset.file === 'photo' && el.files[0]) { setPhoto(el.files[0]); return; }
+  if (el.dataset.file === 'import' && el.files[0]) { importData(el.files[0]); el.value = ''; }
+});
+
+function setPhoto(file) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    const img = new Image();
+    img.onload = () => {
+      const max = 900, r = Math.min(1, max / Math.max(img.width, img.height));
+      const c = document.createElement('canvas'); c.width = Math.round(img.width * r); c.height = Math.round(img.height * r);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      S.settings.photo = c.toDataURL('image/jpeg', 0.82); save(); render(); toast('응원 사진을 바꿨어요.');
+    };
+    img.onerror = () => toast('이 사진은 불러올 수 없어요.');
+    img.src = reader.result;
+  };
+  reader.readAsDataURL(file);
+}
+function exportData() {
+  const blob = new Blob([JSON.stringify(S, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = `gyeolsim-backup-${todayStr()}.json`; document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+function importData(file) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const d = normalize(JSON.parse(reader.result));
+      if (!confirm(`백업을 불러올까요? 지금 기록은 백업 내용으로 바뀌어요.\n(할 일 ${d.tasks.length}개, 일정 ${d.events.length}개)`)) return;
+      S = d; save(); render(); toast('백업을 불러왔어요.');
+    } catch (err) { toast('백업 파일을 읽을 수 없어요.'); }
+  };
+  reader.readAsText(file);
+}
+
+document.addEventListener('visibilitychange', () => { if (!document.hidden) render(); });
+
+// 코치 말 주기적으로 바꾸기 (말풍선 글자만 바꿔서 입력 중인 내용은 그대로 둠)
+let renderedDay = todayStr();
+setInterval(() => {
+  if (document.hidden) return;
+  const busy = $('#sheet').innerHTML || (document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName));
+  if (todayStr() !== renderedDay && !busy) { renderedDay = todayStr(); render(); return; } // 자정이 지나면 이월 처리
+  if (tab !== 'tasks') return;
+  const p = $('.bubble p'); if (!p) return;
+  coachTick++;
+  const msg = coachMsg();
+  if (msg === p.textContent) return;
+  p.textContent = msg;
+  p.classList.remove('swap'); void p.offsetWidth; p.classList.add('swap');
+}, 20000);
+
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}
+
+render();
+})();
+</script>
+</body>
+</html>
