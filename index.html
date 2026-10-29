@@ -343,7 +343,7 @@ textarea{font:inherit;font-size:16px;width:100%;padding:11px 12px;border:1px sol
 (() => {
 'use strict';
 const KEY = 'gyeolsim-v1';
-const APP_VERSION = 'v20'; // sw.js의 CACHE 숫자와 같이 올리기
+const APP_VERSION = 'v21'; // sw.js의 CACHE 숫자와 같이 올리기
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
@@ -1037,7 +1037,7 @@ function coachHTML() {
   const { v } = coachState();
   const tone = TONE[S.settings.tone] || TONE.balanced;
   const bg = bgHTML(), singer = esc(singerName());
-  const lock = rewardOpen() ? `<button class="rw-lock link" style="display:block" data-act="tab" data-tab="home">🎁 오늘의 ${singer} 보상이 열렸어요. 보러 가기</button>`
+  const lock = rewardOpen() ? `<button class="rw-lock link" style="display:block" data-act="tab" data-tab="home">🎁 오늘의 보상이 열렸어요. 보러 가기</button>`
     : v.goal ? `<div class="rw-lock">🔒 <b>${v.goal - v.d}개 더</b> 끝내면 ${singer} 포토카드·새 영상 열림</div>` : '';
   return `<section class="card hero">
     ${bg ? `<div class="banner">${bg}</div>` : ''}
@@ -1078,7 +1078,7 @@ function rewardCard() {
   const memo = day.memo && videoBy(day.memo);
   const shortsN = S.fan.feed.filter(v => v.k === 'B').length + VIDEOS.filter(v => v.k === 'B').length;
   return `<section class="card">
-    <div class="rw-head"><h2>${open ? '🎁' : '🔒'} 오늘의 ${singer}</h2><span>${status}</span></div>
+    <div class="rw-head"><h2>${open ? '🎁' : '🔒'} 오늘의 보상</h2><span>${status}</span></div>
     ${ann ? `<div class="rw-ann">오늘은 ${singer} ${esc(ann.replace(/^\S+ /, ''))}! 목표를 채우면 한정 포토카드를 받아요.</div>` : ''}
     <div class="tiles">
       ${card ? `<button class="tile go" data-act="view-card" data-k="${esc(day.card)}"><i class="blur" style="background-image:url('${ytThumb(card.id, card.q)}');filter:none;opacity:.9"></i><span class="ti"></span><span><span class="tt" style="color:#fff;text-shadow:0 1px 4px #000">포토카드 받음</span></span></button>`
