@@ -8,18 +8,21 @@ const VAPID_PUBLIC = 'BIxOlEIR5pyobxPwy3sUNw_pffZJdHeWwA9Rv0X6hR1EvMwC1I5V6ADAKA
 const VAPID_SUB = 'https://kboram28.github.io/gyeolsim/';
 const MAX_ITEMS = 30;
 const STALE_MS = 30 * 60 * 1000; // 30분 넘게 늦어진 알림은 버림
+const YT_CHANNEL = 'UC6pfHZyVjLQ0k-7BvDkAFfQ'; // 김결 @Gyeol_Kim
+const VIDEOS_TTL = 30 * 60; // 새 영상 목록은 30분 동안 캐시
 
 export default {
   async fetch(req, env) {
     const origin = req.headers.get('Origin') || '';
     const cors = {
       'Access-Control-Allow-Origin': ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0],
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type',
       'Vary': 'Origin'
     };
     if (req.method === 'OPTIONS') return new Response(null, { headers: cors });
     const json = (o, status = 200) => new Response(JSON.stringify(o), { status, headers: { ...cors, 'Content-Type': 'application/json' } });
+    if (req.method === 'GET' && new URL(req.url).pathname === '/videos') return videos(req, cors);
     if (req.method !== 'POST') return json({ ok: true, service: 'gyeolsim-push' });
 
     let body;
@@ -142,4 +145,28 @@ async function sendPush(env, sub, msg) {
     },
     body
   });
+}
+
+// 김결 유튜브 채널 최신 영상 15개 (YouTube RSS). 앱의 '오늘의 김결 영상'에 쓰임
+async function videos(req, cors) {
+  const cache = caches.default, ck = new Request('https://cache.local/videos');
+  let res = await cache.match(ck);
+  if (!res) {
+    const r = await fetch('https://www.youtube.com/feeds/videos.xml?channel_id=' + YT_CHANNEL);
+    if (!r.ok) return new Response(JSON.stringify({ items: [] }), { status: 502, headers: { ...cors, 'Content-Type': 'application/json' } });
+    const items = parseFeed(await r.text());
+    res = new Response(JSON.stringify({ items }), { headers: { 'Content-Type': 'application/json', 'Cache-Control': 'max-age=' + VIDEOS_TTL } });
+    await cache.put(ck, res.clone());
+  }
+  return new Response(res.body, { headers: { ...cors, 'Content-Type': 'application/json' } });
+}
+function parseFeed(xml) {
+  const unxml = s => s.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
+  return [...xml.matchAll(/<entry>([\s\S]*?)<\/entry>/g)].map(([, e]) => {
+    const id = (e.match(/<yt:videoId>([\w-]{11})<\/yt:videoId>/) || [])[1];
+    const t = unxml((e.match(/<title>([^<]*)<\/title>/) || [])[1] || '');
+    const at = (e.match(/<published>([^<]+)<\/published>/) || [])[1] || '';
+    const short = /\/shorts\//.test((e.match(/<link rel="alternate" href="([^"]+)"/) || [])[1] || '');
+    return id && { id, t: t.slice(0, 120), at, k: short ? 'B' : /^\d{6,7}\s/.test(t) ? 'L' : 'A' };
+  }).filter(Boolean);
 }

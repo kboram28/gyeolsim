@@ -253,6 +253,77 @@ textarea{font:inherit;font-size:16px;width:100%;padding:11px 12px;border:1px sol
 .color-pick span{display:block;width:34px;height:34px;border-radius:50%;background:var(--c);border:3px solid transparent;box-shadow:0 0 0 1px var(--line)}
 .color-pick input:checked+span{border-color:var(--card);box-shadow:0 0 0 2px var(--c)}
 .t-title[data-act]{cursor:text}
+
+/* 김결: 배경 사진 */
+.banner{position:relative;aspect-ratio:16/9;overflow:hidden;border-radius:20px;margin-bottom:12px;background:var(--line)}
+.banner .pc,.banner>img{position:absolute}
+.banner>img{inset:0;width:100%;height:100%;object-fit:cover}
+.banner .ov{position:absolute;inset:auto 0 0 0;padding:40px 16px 14px;background:linear-gradient(transparent,rgba(0,0,0,.6));color:#fff}
+.banner .ov h1{color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.4)}
+.banner .ov .sub{font-size:13px;opacity:.9}
+.hero .banner{border-radius:0;margin:0}
+/* 포토카드 (원본에서 띠만 잘라낸 영역을 그대로 보여 줌) */
+.pc{position:relative;overflow:hidden;width:100%}
+.pc img{position:absolute;max-width:none;height:auto;display:block}
+.pcard{display:block;width:100%;border-radius:12px;overflow:hidden;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.18);background:#fff;position:relative}
+.pcard.R{border-color:#8fb8ff}.pcard.SR{border-color:#ffd24a;box-shadow:0 0 0 1px #e0a100,0 4px 14px rgba(224,161,0,.45)}
+.pcard.sp{border-color:#ffb3d1;box-shadow:0 0 0 1px #e04fae,0 4px 14px rgba(224,79,174,.45)}
+.pcard .rib{position:absolute;left:6px;top:6px;font-size:10.5px;font-weight:800;padding:2px 7px;border-radius:999px;background:rgba(0,0,0,.6);color:#fff;z-index:1}
+.binder{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;align-items:start}
+.binder .land{grid-column:span 2}
+.rar-row{display:flex;gap:10px;font-size:13px;color:var(--sub);margin:-4px 0 10px}
+.rar-row b{color:var(--ink)}
+/* 오늘의 김결 보상 */
+.rw-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:10px}
+.rw-head h2{margin:0}
+.rw-head span{font-size:12.5px;color:var(--sub);text-align:right}
+.rw-ann{background:var(--fan-soft);color:var(--fan);font-weight:700;font-size:13px;padding:8px 10px;border-radius:12px;margin-bottom:10px}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tile{position:relative;border-radius:14px;background:var(--bg);border:1px solid var(--line);padding:10px;text-align:left;min-height:96px;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden}
+.tile .ti{font-size:22px}.tile .tt{font-weight:700;font-size:14px}.tile .td{font-size:12px;color:var(--sub)}
+.tile.lock{opacity:.85}
+.tile.lock::after{content:"🔒";position:absolute;right:8px;top:8px;font-size:14px}
+.tile .blur{position:absolute;inset:0;background-size:cover;background-position:center;filter:blur(10px) brightness(.85);opacity:.55}
+.tile>*{position:relative}
+.tile.go{background:var(--pri-soft);border-color:var(--pri)}
+.tile.go .tt{color:var(--pri)}
+.vrow{display:flex;gap:8px;overflow-x:auto;margin-top:10px;padding-bottom:2px}
+.vth{flex:none;width:150px;text-align:left}
+.vth img{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:10px;display:block;background:var(--line)}
+.vth div{font-size:12px;margin-top:4px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.vth .new{color:var(--warn);font-weight:800}
+/* 카드 뽑기 연출 */
+.reveal{display:grid;place-items:center;padding:8px 0 4px;perspective:1000px}
+.flip{width:min(72vw,300px);transform-style:preserve-3d;animation:flip 1s ease-out .2s both}
+.flip .pcard{backface-visibility:hidden}
+@keyframes flip{from{transform:rotateY(180deg) scale(.7);opacity:.2}to{transform:none}}
+.rar-big{text-align:center;font-weight:800;font-size:18px;margin:12px 0 4px}
+.rar-big.SR{color:#e0a100}.rar-big.R{color:#2f6fe0}.rar-big.sp{color:#e04fae}
+/* 영상 */
+.player{position:relative;width:100%;aspect-ratio:16/9;border-radius:14px;overflow:hidden;background:#000}
+.player.v{aspect-ratio:9/16;max-height:68vh;width:auto;margin:0 auto}
+.player iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.shorts{position:fixed;inset:0;z-index:60;background:#000;overflow-y:auto;scroll-snap-type:y mandatory;-webkit-overflow-scrolling:touch}
+.slide{height:100dvh;scroll-snap-align:start;position:relative;display:grid;place-items:center}
+.slide .sv{position:relative;height:100%;max-height:100dvh;aspect-ratio:9/16;max-width:100vw;background:#111 center/cover no-repeat}
+.slide .sv iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.slide .cap{position:absolute;left:0;right:0;bottom:0;padding:40px 16px calc(env(safe-area-inset-bottom) + 18px);color:#fff;font-size:14px;background:linear-gradient(transparent,rgba(0,0,0,.7));pointer-events:none}
+.shorts-x{position:fixed;top:calc(env(safe-area-inset-top) + 10px);right:12px;z-index:61;width:40px;height:40px;border-radius:50%;background:rgba(0,0,0,.5);color:#fff;font-size:18px}
+.shorts-hint{position:fixed;top:calc(env(safe-area-inset-top) + 18px);left:16px;z-index:61;color:#fff;font-size:13px;opacity:.8}
+/* 김결 탭 */
+.prof-big{font-size:28px;font-weight:800;letter-spacing:-.02em;color:var(--pri)}
+.prof-row{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px}
+.prof-row:last-of-type{border-bottom:0}
+.prof-row span:first-child{color:var(--sub)}
+.prof-row b{text-align:right}
+.diary{padding:10px 0;border-bottom:1px solid var(--line);display:flex;gap:10px}
+.diary:last-child{border-bottom:0}
+.diary img{flex:none;width:64px;height:64px;object-fit:cover;border-radius:10px}
+.diary .memo{font-size:13px;color:var(--sub);margin-top:2px}
+.acc-pick{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:4px 0 14px}
+.acc-pick button{width:34px;height:34px;border-radius:50%;background:var(--c);box-shadow:0 0 0 1px var(--line);border:3px solid transparent}
+.acc-pick button.on{border-color:var(--card);box-shadow:0 0 0 2px var(--c)}
+.acc-pick input[type=color]{width:34px;height:34px;border:0;padding:0;background:none;border-radius:50%}
 @media (prefers-reduced-motion:reduce){*{animation:none!important}}
 </style>
 </head>
@@ -263,6 +334,7 @@ textarea{font:inherit;font-size:16px;width:100%;padding:11px 12px;border:1px sol
   <button data-act="tab" data-tab="cal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg>캘린더</button>
   <button data-act="tab" data-tab="tasks"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m4 7 2 2 4-4M4 17l2 2 4-4M13 7h7M13 17h7"/></svg>할 일</button>
   <button data-act="tab" data-tab="proj"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M8 14h8"/></svg>프로젝트</button>
+  <button data-act="tab" data-tab="fan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.5s-7.5-4.6-9.2-9.3C1.7 8 3.6 4.5 7.1 4.5c2 0 3.6 1.1 4.9 2.9 1.3-1.8 2.9-2.9 4.9-2.9 3.5 0 5.4 3.5 4.3 6.7-1.7 4.7-9.2 9.3-9.2 9.3z"/></svg><span id="nav-fan">김결</span></button>
   <button data-act="tab" data-tab="set"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>설정</button>
 </nav>
 <div id="sheet"></div>
@@ -271,7 +343,7 @@ textarea{font:inherit;font-size:16px;width:100%;padding:11px 12px;border:1px sol
 (() => {
 'use strict';
 const KEY = 'gyeolsim-v1';
-const APP_VERSION = 'v19'; // sw.js의 CACHE 숫자와 같이 올리기
+const APP_VERSION = 'v20'; // sw.js의 CACHE 숫자와 같이 올리기
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
@@ -306,7 +378,22 @@ function defaults() {
     tasks: [], events: [], projects: [], cats: defaultCats(),
     settings: { name: '', singer: '김결', tone: 'balanced', songs: [], photo: null, alarmTimes: ['11:00', '14:00', '16:00', '20:00', '22:00'] },
     stats: { points: 0, streak: 0, lastGoalDate: null },
-    ui: { installHidden: false, pushOn: false }
+    ui: { installHidden: false, pushOn: false },
+    fan: normFan(null)
+  };
+}
+// 김결 탭 데이터: 포토카드(cards: 'id|장면' → 받은 날), 기념일 카드, 날마다 뽑은 보상, 숨긴 카드, 본 영상, 덕질 기록, 테마
+function normFan(f) {
+  const obj = o => o && typeof o === 'object' && !Array.isArray(o) ? o : {};
+  const arr = a => Array.isArray(a) ? a : [];
+  f = obj(f);
+  return {
+    profile: { since: '', birthday: '', debut: '', fandom: '', agency: '', fav: '', ...obj(f.profile) },
+    cards: obj(f.cards), special: obj(f.special), days: obj(f.days),
+    hidden: arr(f.hidden), seen: arr(f.seen).slice(-300), memories: arr(f.memories).slice(-200),
+    diary: arr(f.diary).filter(x => x && x.id && isDate(x.date)),
+    feed: arr(f.feed),
+    theme: { accent: '', bg: '', ...obj(f.theme) }
   };
 }
 function normalize(d) {
@@ -323,7 +410,12 @@ function normalize(d) {
       return st;
     })(),
     stats: { ...b.stats, ...(d.stats || {}) },
-    ui: { ...b.ui, ...(d.ui || {}) }
+    ui: { ...b.ui, ...(d.ui || {}) },
+    fan: (() => { // 예전 '응원 사진'은 배경 사진으로 이어서 씀
+      const f = normFan(d.fan);
+      if (!d.fan && String((d.settings || {}).photo || '').startsWith('data:image/')) f.theme.bg = 'upload';
+      return f;
+    })()
   };
 }
 function load() {
@@ -343,7 +435,7 @@ let tab = 'home';
 let calCursor = (() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); })();
 let selDay = todayStr();
 let taskFilter = 'active';
-let nudge = 0, coachTick = 0, rewardShift = 0, newTaskPri = false;
+let nudge = 0, coachTick = 0, newTaskPri = false;
 let newTaskDue = todayStr(); // 할 일 추가 폼의 마감일 (기본: 오늘)
 let openProject = null;
 
@@ -362,7 +454,7 @@ const LINES = {
   // 아래 {task}가 들어간 상황은 할 일마다 따로 만들어져 번갈아 나옴
   crunch: {
     gentle:   ['오늘이 {remain} 남았어. \'{task}\'는 어느 정도 했어? 조금이라도 해 두면 내일이 편해져.', '{nm}\'{task}\' 아직 남아 있네. 다 못 해도 괜찮으니 어디까지 했는지만 확인해 볼까?', '하루가 거의 끝나 가. \'{task}\' 딱 10분만 같이 해 보자.'],
-    balanced: ['오늘 {remain} 남았는데 \'{task}\' 아직 안 했지? 어느 정도 진행됐어?', '{nm}\'{task}\' 오늘 마감이야! 지금 시작하면 자기 전에 끝낼 수 있어.', '시계 봐, {remain} 남았어. \'{task}\' 끝내고 {singer} 노래 듣자.'],
+    balanced: ['오늘 {remain} 남았는데 \'{task}\' 아직 안 했지? 어느 정도 진행됐어?', '{nm}\'{task}\' 오늘 마감이야! 지금 시작하면 자기 전에 끝낼 수 있어.', '시계 봐, {remain} 남았어. \'{task}\' 끝내고 {singer} 포토카드 뽑자.'],
     strict:   ['오늘 {remain} 남았어. \'{task}\' 아직이야? 지금 몇 % 했는지 말해 봐.', '{nm}\'{task}\' 오늘 안에 끝낸다. 남은 시간 {remain}, 지금 시작해.', '내일로 넘기면 또 미루게 돼. \'{task}\' 지금 해.']
   },
   carried: {
@@ -392,23 +484,23 @@ const LINES = {
   },
   projDone: {
     gentle:   ['\'{p}\' 프로젝트 완주! 정말 대단해 💜 +50점'],
-    balanced: ['\'{p}\' 프로젝트 클리어! 오늘은 {singer} 노래로 자축하자 🎉 +50점'],
+    balanced: ['\'{p}\' 프로젝트 클리어! 오늘은 {singer} 영상 보면서 자축하자 🎉 +50점'],
     strict:   ['\'{p}\' 완료. 끝까지 해냈네, 인정. +50점']
   },
   start: {
     gentle:   ['{nm}좋은 하루! 오늘은 {goal}개만 해 보자. 천천히 해도 괜찮아.', '오늘도 와 줘서 고마워. 작은 것 하나부터 시작해 볼까?'],
-    balanced: ['{nm}오늘 목표 {goal}개! 다 채우면 {singer} 노래가 보상으로 기다리고 있어.', '첫 번째가 제일 어려워. 딱 5분만 해 보자, 그다음은 쉬워져.'],
+    balanced: ['{nm}오늘 목표 {goal}개! 다 채우면 {singer} 포토카드랑 새 영상이 열려.', '첫 번째가 제일 어려워. 딱 5분만 해 보자, 그다음은 쉬워져.'],
     strict:   ['오늘 목표는 {goal}개. 시작 안 하면 0개야. 지금 바로 첫 번째.', '고민할 시간에 하나 끝낸다. 오늘 {goal}개, 출발.']
   },
   progress: {
     gentle:   ['벌써 {d}개나 했어, 정말 잘하고 있어! {left}개만 더 해 볼까?', '한 걸음씩 잘 가고 있어. 무리하지 말고 {left}개 더!'],
-    balanced: ['{d}/{goal} 완료! {left}개만 더 하면 {singer} 노래 해금이야.', '흐름 탔다! 이 기세로 {left}개 더 가자.'],
+    balanced: ['{d}/{goal} 완료! {left}개만 더 하면 {singer} 포토카드 뽑기야.', '흐름 탔다! 이 기세로 {left}개 더 가자.'],
     strict:   ['{d}개 했으면 {left}개 남았지. 쉬는 건 다 끝내고.', '좋아, 근데 아직이야. {left}개 더.']
   },
   goalDone: {
-    gentle:   ['대단해! 오늘 목표를 다 이뤘어. 스스로를 꼭 칭찬해 줘 💜', '정말 수고 많았어. {singer} 노래 들으면서 푹 쉬어.'],
-    balanced: ['오늘 목표 {goal}개 클리어! 수고했어, 이제 {singer} 노래 들으면서 쉬자 🎧', '완벽해! 오늘의 너는 칭찬받아 마땅해.'],
-    strict:   ['목표 달성. 인정할게, 오늘은 잘했어. {singer} 노래 들어도 좋아.', '해냈네. 이 정도면 내일도 할 수 있다는 뜻이야.']
+    gentle:   ['대단해! 오늘 목표를 다 이뤘어. 스스로를 꼭 칭찬해 줘 💜', '정말 수고 많았어. {singer} 영상 보면서 푹 쉬어.'],
+    balanced: ['오늘 목표 {goal}개 클리어! {singer} 포토카드 뽑으러 가자 🎁', '완벽해! 오늘의 너는 칭찬받아 마땅해.'],
+    strict:   ['목표 달성. 인정할게, 오늘은 잘했어. {singer} 영상 봐도 좋아.', '해냈네. 이 정도면 내일도 할 수 있다는 뜻이야.']
   },
   done: {
     gentle:   ['잘했어! +{pts}점 💜', '정말 멋져! +{pts}점', '한 걸음 더 갔어! +{pts}점'],
@@ -423,6 +515,8 @@ function line(sit, v, salt = 0) {
   return fill(set[(hash(todayStr() + sit) + salt) % set.length], v);
 }
 const singerName = () => (S.settings.singer || '').trim() || '최애';
+// 받침 있으면 a(과·이), 없으면 b(와·가)
+const josa = (w, a, b) => { const c = String(w).charCodeAt(String(w).length - 1); return c >= 0xAC00 && c <= 0xD7A3 && (c - 0xAC00) % 28 ? a : b; };
 // 오늘 목표 = 오늘 마감인 할 일 + 오늘 끝낸 할 일 (미리 끝낸 일도 목표에 더해짐)
 const todayGoalTasks = () => { const t = todayStr(); return S.tasks.filter(x => x.done ? x.doneAt === t : x.due === t); };
 const goalN = () => todayGoalTasks().length;
@@ -513,7 +607,8 @@ function pushItems() {
       const set = LINES[sit][S.settings.tone] || LINES[sit].balanced;
       const v = { nm: S.settings.name ? S.settings.name.trim() + ', ' : '', singer: singerName(), goal: off ? pending.length : goalN(), d: off ? 0 : doneToday(),
         remain: remainTxt(new Date(at)), task: x.title, c, c1: c + 1 };
-      const more = pending.length > 1 ? ` (남은 일 ${pending.length}개)` : '';
+      const nv = off || rewardOpen() ? 0 : newVideos().length;
+      const more = (pending.length > 1 ? ` (남은 일 ${pending.length}개)` : '') + (nv ? ` · ${singerName()} 새 영상 ${nv}개 잠김 🔒` : '');
       items.push({ at, title: `${tone.face} ${tone.name}`, body: fill(set[(i + hash(ds)) % set.length], v) + more });
     });
   }
@@ -554,6 +649,114 @@ function curStreak() {
   const y = new Date(); y.setDate(y.getDate() - 1);
   return (last === todayStr() || last === ymd(y)) ? S.stats.streak : 0;
 }
+
+/* ---------- 김결: 포토카드 · 영상 보상 ---------- */
+// data/cards.json: 검수한 포토카드 (b = 썸네일에서 띠를 잘라낸 영역, fy = 얼굴 세로 위치, r = 등급)
+// data/videos.json: 채널 전체 영상 (추억 영상·숏츠 피드), FEED: 알림 서버가 주는 최신 영상 15개
+let CARDS = [], VIDEOS = [], feedAt = 0;
+const FEED_DAYS = 14; // 이 기간 안에 올라온 영상만 '새 영상'
+const RAR = { N: '일반', R: '레어', SR: '슈퍼레어' };
+const cardKey = c => c.id + '|' + c.s;
+const cardBy = k => CARDS.find(c => cardKey(c) === k);
+const ytThumb = (id, q = 'hqdefault') => `https://i.ytimg.com/vi/${encodeURIComponent(id)}/${q}.jpg`;
+const isBusy = () => !!$('#sheet').innerHTML || !!(document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName));
+async function loadFanData() {
+  const get = async u => { try { const r = await fetch(u, { cache: 'no-cache' }); return r.ok ? await r.json() : null; } catch (e) { return null; } };
+  const [c, v] = await Promise.all([get('data/cards.json'), get('data/videos.json')]);
+  if (Array.isArray(c)) CARDS = c.filter(x => x && x.id && Array.isArray(x.b));
+  if (Array.isArray(v)) VIDEOS = v.filter(x => x && x.id);
+  if (!isBusy()) render();
+  refreshFeed();
+}
+async function refreshFeed() {
+  if (Date.now() - feedAt < 10 * 60e3 || !/^https:/.test(PUSH_API)) return;
+  feedAt = Date.now();
+  try {
+    const r = await fetch(PUSH_API + '/videos'); if (!r.ok) return;
+    const items = ((await r.json()).items || []).filter(x => x && /^[\w-]{11}$/.test(x.id)).slice(0, 30);
+    if (JSON.stringify(items) === JSON.stringify(S.fan.feed)) return;
+    S.fan.feed = items; save();
+    if (!isBusy()) render();
+  } catch (e) {}
+}
+const newVideos = () => {
+  const lim = Date.now() - FEED_DAYS * 864e5, seen = new Set(S.fan.seen);
+  return S.fan.feed.filter(v => !seen.has(v.id) && Date.parse(v.at) > lim);
+};
+// 오늘 목표를 한 번이라도 채웠으면 보상이 열림 (나중에 할 일이 늘어도 다시 잠기지 않음)
+const rewardOpen = () => S.stats.lastGoalDate === todayStr() || goalMet(doneToday(), goalN());
+const dayRec = () => S.fan.days[todayStr()] || (S.fan.days[todayStr()] = {});
+// 오늘이 김결 기념일이면 이름을 돌려줌: 프로필의 생일·데뷔일, 또는 ⭐ 카테고리 일정
+function anniversary(ds = todayStr()) {
+  const pf = S.fan.profile, md = ds.slice(5);
+  if (isDate(pf.birthday) && pf.birthday.slice(5) === md) return '🎂 생일 기념';
+  if (isDate(pf.debut) && pf.debut.slice(5) === md) {
+    const n = +ds.slice(0, 4) - +pf.debut.slice(0, 4);
+    return n > 0 ? `🎉 데뷔 ${n}주년` : '🎉 데뷔일';
+  }
+  const ev = eventsOn(ds).find(e => e.type === 'fan');
+  return ev ? `⭐ ${ev.title.slice(0, 14)}` : '';
+}
+// 오늘의 포토카드: 일반 70% · 레어 25% · 슈퍼레어 5%, 안 가진 카드 먼저. 기념일엔 레어 이상 + 한정 표시
+function drawCard() {
+  const t = todayStr(), day = dayRec();
+  if (day.card) return day.card;
+  const hidden = new Set(S.fan.hidden), own = S.fan.cards, ann = anniversary(t);
+  const pool = CARDS.filter(c => !hidden.has(cardKey(c)));
+  const fresh = pool.filter(c => !own[cardKey(c)]);
+  const src = fresh.length ? fresh : pool;
+  const x = Math.random() * 100;
+  const rar = ann ? (x < 35 ? 'SR' : 'R') : x < 5 ? 'SR' : x < 30 ? 'R' : 'N';
+  const cand = src.filter(c => c.r === rar).length ? src.filter(c => c.r === rar) : src;
+  const c = cand[Math.floor(Math.random() * cand.length)];
+  if (!c) return null;
+  const k = cardKey(c);
+  day.card = k; if (!own[k]) own[k] = t;
+  if (ann) S.fan.special[k] = { label: ann, date: t };
+  save(); return k;
+}
+// 추억 영상: 최근 영상을 뺀 채널 영상 중 아직 안 뽑은 것
+function drawMemory() {
+  const day = dayRec(); if (day.memo) return day.memo;
+  const recent = new Set(S.fan.feed.map(v => v.id)), got = new Set(S.fan.memories.map(m => m.id));
+  let pool = VIDEOS.filter(v => !recent.has(v.id) && !got.has(v.id));
+  if (!pool.length) pool = VIDEOS.filter(v => !recent.has(v.id));
+  const v = pool[Math.floor(Math.random() * pool.length)];
+  if (!v) return null;
+  day.memo = v.id; S.fan.memories.push({ id: v.id, t: v.t, k: v.k, date: todayStr() }); save();
+  return v.id;
+}
+const videoBy = id => S.fan.feed.find(v => v.id === id) || VIDEOS.find(v => v.id === id) || S.fan.memories.find(v => v.id === id);
+// 포토카드 그림: 원본 썸네일을 띠 영역만큼 확대해서 보여 줌
+function cardImg(c) {
+  const [bx, by, bw, bh] = c.b;
+  return `<div class="pc" style="aspect-ratio:${bw}/${bh}"><img src="${ytThumb(c.id, c.q)}" loading="lazy" alt="" style="width:${c.W / bw * 100}%;left:${-bx / bw * 100}%;top:${-by / bh * 100}%"></div>`;
+}
+function cardHTML(k, act = 'view-card') {
+  const c = cardBy(k); if (!c) return '';
+  const sp = S.fan.special[k];
+  return `<button class="pcard ${c.r} ${sp ? 'sp' : ''} ${c.b[2] / c.b[3] > 1.1 ? 'land' : ''}" data-act="${act}" data-k="${esc(k)}">
+    ${sp ? `<span class="rib">${esc(sp.label)} 한정</span>` : c.r !== 'N' ? `<span class="rib">${RAR[c.r]}</span>` : ''}${cardImg(c)}</button>`;
+}
+// 배경 사진: 직접 올린 사진 또는 포토카드 (얼굴이 위쪽 40% 즈음에 오도록 배치)
+function bgHTML() {
+  const bg = S.fan.theme.bg;
+  if (bg === 'upload') { const p = S.settings.photo || ''; return p.startsWith('data:image/') ? `<img src="${esc(p)}" alt="">` : ''; }
+  const c = bg && cardBy(bg); if (!c) return '';
+  const [, , bw, bh] = c.b, r = (bw / bh) / (16 / 9);
+  if (r >= 1) return `<div class="pc" style="aspect-ratio:${bw}/${bh};height:100%;width:${r * 100}%;left:${-(r - 1) * 50}%">${cardImg(c).replace(/^<div class="pc"[^>]*>|<\/div>$/g, '')}</div>`;
+  const h = 1 / r * 100, top = Math.min(0, Math.max(100 - h, 40 - c.fy * h));
+  return `<div class="pc" style="aspect-ratio:${bw}/${bh};top:${top}%">${cardImg(c).replace(/^<div class="pc"[^>]*>|<\/div>$/g, '')}</div>`;
+}
+// 포인트 색
+const ACCENTS = ['#7c5cff', '#e04f8a', '#2f6fe0', '#14a38b', '#e0782b', '#3a3a4f'];
+function applyTheme() {
+  const a = S.fan.theme.accent, st = document.documentElement.style;
+  if (hexOk(a)) { st.setProperty('--pri', a); st.setProperty('--pri-ink', '#ffffff'); st.setProperty('--pri-soft', `color-mix(in srgb, ${a} 14%, var(--card))`); }
+  else ['--pri', '--pri-ink', '--pri-soft'].forEach(p => st.removeProperty(p));
+  const m = document.querySelector('meta[name=theme-color]'); if (m) m.content = hexOk(a) ? a : '#7c5cff';
+}
+const sinceDays = () => isDate(S.fan.profile.since) && S.fan.profile.since <= todayStr() ? daysBetween(S.fan.profile.since, todayStr()) + 1 : 0;
 
 /* ---------- 일정 ---------- */
 const occurs = (ev, ds) => ev.yearly ? (ev.date.slice(5) === ds.slice(5) && ds >= ev.date) : ev.date === ds;
@@ -710,11 +913,14 @@ function rollover() {
 
 function render() {
   rollover();
+  applyTheme();
   document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
+  $('#nav-fan').textContent = singerName().slice(0, 6);
   const app = $('#app');
   if (openProject && !projById(openProject)) openProject = null;
   app.innerHTML = tab === 'home' ? renderHome() : tab === 'cal' ? renderCal() : tab === 'tasks' ? renderTasks()
-    : tab === 'proj' ? (openProject ? renderProjectDetail(projById(openProject)) : renderProjects()) : renderSettings();
+    : tab === 'proj' ? (openProject ? renderProjectDetail(projById(openProject)) : renderProjects())
+    : tab === 'fan' ? renderFan() : renderSettings();
 }
 
 function renderProjects() {
@@ -794,15 +1000,20 @@ function renderHome() {
   const projs = monthProjects();
   const todays = S.tasks.filter(x => x.due === t && (!x.done || x.doneAt === t)).sort((a, b) => (a.done - b.done) || taskSort(a, b));
   const standalone = window.navigator.standalone || matchMedia('(display-mode: standalone)').matches;
+  const bg = bgHTML(), sd = sinceDays();
+  const dateTxt = `${now.getMonth() + 1}월 ${now.getDate()}일 ${WD[now.getDay()]}요일${sd ? ` · ${esc(singerName())}${josa(singerName(), '과', '와')} 함께한 지 ${sd}일째` : ''}`;
+  const title = `<h1>${S.settings.name ? esc(S.settings.name) + '의 ' : ''}결심</h1>`;
 
   return `
-  <div class="top"><div><div class="sub">${now.getMonth() + 1}월 ${now.getDate()}일 ${WD[now.getDay()]}요일</div><h1>${S.settings.name ? esc(S.settings.name) + '의 ' : ''}결심</h1></div></div>
+  ${bg ? `<div class="banner">${bg}<div class="ov"><div class="sub">${dateTxt}</div>${title}</div></div>`
+    : `<div class="top"><div><div class="sub">${dateTxt}</div>${title}</div></div>`}
   ${!standalone && !S.ui.installHidden ? `<div class="install"><div>📲 Safari <b>공유 버튼</b> → <b>홈 화면에 추가</b>를 누르면 앱처럼 쓸 수 있어요.</div><button data-act="hide-install" aria-label="닫기">✕</button></div>` : ''}
   <button class="card stats" style="width:100%;text-align:left" data-act="tab" data-tab="tasks">
     <div class="ring" style="--p:${pct}"><span>${d}/${goal}</span></div>
     <div class="stat-txt"><div class="stat-big">${goal ? `오늘 목표 ${pct}%` : '오늘 마감인 할 일이 없어요'}</div>
       <div class="mini"><span>⭐ <b>${S.stats.points}</b>점</span><span>🔥 <b>${curStreak()}</b>일 연속</span></div></div>
   </button>
+  ${rewardCard()}
   <section class="card">
     <div class="sec-head"><h2>오늘 할 일</h2><button class="btn ghost sm" data-act="new-task">+ 할 일</button></div>
     ${todays.length ? `<ul class="list">${todays.map(x => taskItem(x)).join('')}</ul>` : '<div class="empty-txt">오늘 할 일이 없어요.</div>'}
@@ -825,15 +1036,16 @@ function renderHome() {
 function coachHTML() {
   const { v } = coachState();
   const tone = TONE[S.settings.tone] || TONE.balanced;
-  const photo = (S.settings.photo || '').startsWith('data:image/') ? S.settings.photo : '';
+  const bg = bgHTML(), singer = esc(singerName());
+  const lock = rewardOpen() ? `<button class="rw-lock link" style="display:block" data-act="tab" data-tab="home">🎁 오늘의 ${singer} 보상이 열렸어요. 보러 가기</button>`
+    : v.goal ? `<div class="rw-lock">🔒 <b>${v.goal - v.d}개 더</b> 끝내면 ${singer} 포토카드·새 영상 열림</div>` : '';
   return `<section class="card hero">
-    ${photo ? `<img class="hero-photo" src="${esc(photo)}" alt="응원 사진">` : ''}
+    ${bg ? `<div class="banner">${bg}</div>` : ''}
     <div class="coach"><div class="coach-face">${tone.face}</div>
       <button class="bubble" data-act="nudge"><div class="coach-name">${tone.name}</div><p>${esc(coachMsg())}</p><span class="hint">탭해서 다른 말 듣기</span></button>
     </div>
-    ${v.goal && !goalMet(v.d, v.goal) ? rewardHTML(v.d, v.goal) : ''}
-  </section>
-  ${goalMet(v.d, v.goal) ? rewardHTML(v.d, v.goal) : ''}`;
+    ${lock}
+  </section>`;
 }
 
 // 왼쪽: 가수 일정, 오른쪽: 내 일정(가수 일정이 아닌 모든 카테고리)
@@ -855,20 +1067,29 @@ function ddayHTML() {
   </div>`;
 }
 
-function rewardHTML(done, goal) {
-  const singer = esc(singerName());
-  if (done < goal) {
-    return `<div class="rw-lock">🔒 <b>${goal - done}개 더</b> 끝내면 ${singer} 노래 열림</div>`;
-  }
-  const songs = (S.settings.songs || []).filter(s => safeUrl(s.url));
-  if (!songs.length) {
-    return `<section class="card reward open"><div class="rw-ic">🎁</div><div>보상 해금! <button class="link" data-act="tab" data-tab="set">설정</button>에서 ${singer} 노래 링크를 등록하면 여기서 바로 들을 수 있어요.</div></section>`;
-  }
-  const s = songs[(hash(todayStr()) + rewardShift) % songs.length];
-  return `<section class="card reward open"><div class="rw-ic">🎧</div><div class="rw-body">
-    <div class="rw-label">오늘의 보상 해금!</div><div class="rw-title">${esc(s.title || singerName() + ' 노래')}</div>
-    <div class="rw-btns"><a class="btn primary sm" href="${esc(s.url.trim())}" target="_blank" rel="noopener">▶ 들으러 가기</a>
-    ${songs.length > 1 ? '<button class="btn ghost sm" data-act="reroll">다른 곡</button>' : ''}</div></div></section>`;
+// 오늘의 김결: 목표를 채우면 포토카드 1장 · 새 영상 · 숏츠 피드 · 추억 영상 뽑기가 열림
+function rewardCard() {
+  const singer = esc(singerName()), open = rewardOpen(), d = doneToday(), goal = goalN();
+  const nv = newVideos(), day = S.fan.days[todayStr()] || {}, ann = anniversary();
+  const status = open ? '오늘 목표 달성! 다 열렸어요 🎉' : goal ? `할 일 <b>${goal - d}개</b> 더 끝내면 열려요` : '오늘 마감인 할 일을 정하면 보상이 생겨요';
+  const tile = (act, ic, tt, td, blur) => `<button class="tile ${open ? 'go' : 'lock'}" ${open ? `data-act="${act}"` : 'data-act="reward-locked"'}>
+    ${blur ? `<i class="blur" style="background-image:url('${blur}')"></i>` : ''}<span class="ti">${ic}</span><span><span class="tt">${tt}</span><br><span class="td">${td}</span></span></button>`;
+  const card = day.card && cardBy(day.card);
+  const memo = day.memo && videoBy(day.memo);
+  const shortsN = S.fan.feed.filter(v => v.k === 'B').length + VIDEOS.filter(v => v.k === 'B').length;
+  return `<section class="card">
+    <div class="rw-head"><h2>${open ? '🎁' : '🔒'} 오늘의 ${singer}</h2><span>${status}</span></div>
+    ${ann ? `<div class="rw-ann">오늘은 ${singer} ${esc(ann.replace(/^\S+ /, ''))}! 목표를 채우면 한정 포토카드를 받아요.</div>` : ''}
+    <div class="tiles">
+      ${card ? `<button class="tile go" data-act="view-card" data-k="${esc(day.card)}"><i class="blur" style="background-image:url('${ytThumb(card.id, card.q)}');filter:none;opacity:.9"></i><span class="ti"></span><span><span class="tt" style="color:#fff;text-shadow:0 1px 4px #000">포토카드 받음</span></span></button>`
+        : tile('draw-card', '🃏', '포토카드 뽑기', CARDS.length ? `${Object.keys(S.fan.cards).length}/${CARDS.length}장 모음` : '오늘 1장', '')}
+      ${tile('new-videos', '📺', nv.length ? `새 영상 ${nv.length}개` : '최근 영상', nv.length ? '도착했어요' : '새 영상은 아직 없어요', nv[0] ? ytThumb(nv[0].id) : '')}
+      ${tile('shorts', '📱', '숏츠 피드', `${shortsN}개 넘겨 보기`, '')}
+      ${memo ? `<button class="tile go" data-act="play" data-id="${esc(memo.id)}"><i class="blur" style="background-image:url('${ytThumb(memo.id)}');filter:none;opacity:.35"></i><span class="ti">🎲</span><span><span class="tt">추억 영상</span><br><span class="td">${esc(memo.t || '')}</span></span></button>`
+        : tile('draw-memory', '🎲', '추억 영상 뽑기', '예전 영상 하나', '')}
+    </div>
+    ${open && nv.length ? `<div class="vrow">${nv.map(v => `<button class="vth" data-act="play" data-id="${esc(v.id)}"><img src="${ytThumb(v.id)}" alt="" loading="lazy"><div><span class="new">NEW</span> ${esc(v.t)}</div></button>`).join('')}</div>` : ''}
+  </section>`;
 }
 
 function evItem(e) {
@@ -1018,9 +1239,161 @@ function openTaskSheet() {
   setTimeout(() => { const i = $('#sheet input[name=text]'); if (i) i.focus(); }, 50);
 }
 
+let binderFilter = 'all';
+function renderFan() {
+  const singer = esc(singerName()), pf = S.fan.profile, t = todayStr(), bg = bgHTML(), sd = sinceDays();
+  const nextMD = s => { if (!isDate(s)) return null; let n = `${t.slice(0, 4)}${s.slice(4)}`; if (n < t) n = `${+t.slice(0, 4) + 1}${s.slice(4)}`; return n; };
+  const row = (k, v) => v ? `<div class="prof-row"><span>${k}</span><b>${v}</b></div>` : '';
+  const bd = nextMD(pf.birthday), db = nextMD(pf.debut);
+  const own = Object.keys(S.fan.cards).filter(k => cardBy(k) && !S.fan.hidden.includes(k))
+    .sort((a, b) => S.fan.cards[b].localeCompare(S.fan.cards[a]));
+  const cnt = r => own.filter(k => cardBy(k).r === r).length;
+  const list = own.filter(k => binderFilter === 'all' || (binderFilter === 'sp' ? S.fan.special[k] : cardBy(k).r === binderFilter));
+  const diary = [...S.fan.diary].sort((a, b) => b.date.localeCompare(a.date));
+  const DK = { show: '🎤 공연', album: '💿 앨범', sign: '✍️ 팬사인회', goods: '🛍️ 굿즈', tv: '📺 방송', etc: '💜 기타' };
+  return `
+  ${bg ? `<div class="banner">${bg}<div class="ov"><h1>⭐ ${singer}</h1></div></div>` : `<div class="top"><h1>⭐ ${singer}</h1></div>`}
+  <section class="card">
+    <div class="sec-head"><h2>프로필</h2><button class="btn ghost sm" data-act="edit-profile">수정</button></div>
+    ${sd ? `<div class="prof-big">${singer}${josa(singerName(), '을', '를')} 좋아한 지 ${sd}일째</div><p class="muted" style="margin:2px 0 8px">${fmtMD(pf.since)} ${pf.since.slice(0, 4)}년부터</p>`
+      : '<p class="muted" style="margin:0 0 8px">수정에서 덕질 시작일을 넣으면 함께한 날을 세어 줘요.</p>'}
+    ${row('🎂 생일', bd ? `${fmtShort(pf.birthday)} · ${ddayTxt(daysBetween(t, bd))}` : '')}
+    ${row('🎉 데뷔', db ? `${pf.debut.slice(0, 4)}.${fmtShort(pf.debut)} · ${+db.slice(0, 4) - +pf.debut.slice(0, 4)}주년 ${ddayTxt(daysBetween(t, db))}` : '')}
+    ${row('💜 팬덤', esc(pf.fandom))}${row('🏠 소속사', esc(pf.agency))}${row('🎵 최애곡', esc(pf.fav))}
+  </section>
+  ${rewardCard()}
+  <section class="card">
+    <div class="sec-head"><h2>포토카드 바인더</h2><span class="muted">${own.length}/${CARDS.length || '-'}장</span></div>
+    <div class="rar-row"><span>일반 <b>${cnt('N')}</b></span><span>레어 <b>${cnt('R')}</b></span><span>슈퍼레어 <b>${cnt('SR')}</b></span><span>한정 <b>${own.filter(k => S.fan.special[k]).length}</b></span></div>
+    <div class="chips">${[['all', '전체'], ['SR', '슈퍼레어'], ['R', '레어'], ['N', '일반'], ['sp', '한정']].map(([k, l]) => `<button class="chip ${binderFilter === k ? 'on' : ''}" data-act="binder" data-f="${k}">${l}</button>`).join('')}</div>
+    ${list.length ? `<div class="binder">${list.map(k => cardHTML(k)).join('')}</div>` : `<div class="empty-txt">${own.length ? '이 등급 카드는 아직 없어요.' : '오늘 목표를 채우면 첫 포토카드를 뽑을 수 있어요.'}</div>`}
+    ${S.fan.hidden.length ? `<button class="btn ghost sm" style="margin-top:10px" data-act="unhide">숨긴 카드 ${S.fan.hidden.length}장 되돌리기</button>` : ''}
+  </section>
+  ${S.fan.memories.length ? `<section class="card"><h2>뽑은 추억 영상</h2><div class="vrow" style="margin-top:0">${[...S.fan.memories].reverse().slice(0, 20).map(m => `<button class="vth" data-act="play" data-id="${esc(m.id)}"><img src="${ytThumb(m.id)}" alt="" loading="lazy"><div>${esc(m.t || '')}</div></button>`).join('')}</div></section>` : ''}
+  <section class="card">
+    <div class="sec-head"><h2>덕질 기록장</h2><button class="btn ghost sm" data-act="new-diary">+ 기록</button></div>
+    ${diary.length ? diary.map(x => `<div class="diary">${x.photo ? `<img src="${esc(x.photo)}" alt="">` : ''}
+      <div class="t-main"><div class="t-title"><b>${esc(x.title)}</b></div>
+      <div class="t-meta"><span class="badge fan">${DK[x.kind] || DK.etc}</span><span class="badge">${x.date.replaceAll('-', '.')}</span>${x.place ? `<span class="badge">📍 ${esc(x.place)}</span>` : ''}</div>
+      ${x.memo ? `<p class="memo">${esc(x.memo)}</p>` : ''}</div>
+      <button class="x" data-act="del-diary" data-id="${esc(x.id)}" aria-label="삭제">✕</button></div>`).join('')
+      : '<div class="empty-txt">공연, 앨범, 팬사인회처럼 덕질한 날을 남겨 보세요.</div>'}
+  </section>`;
+}
+const DIARY_KINDS = [['show', '🎤 공연'], ['album', '💿 앨범'], ['sign', '✍️ 팬사인회'], ['goods', '🛍️ 굿즈'], ['tv', '📺 방송'], ['etc', '💜 기타']];
+
+function sheet(html, label) {
+  $('#sheet').innerHTML = `<div class="sheet-bg" data-act="close-bg"><div class="sheet" role="dialog" aria-label="${esc(label)}">${html}</div></div>`;
+}
+// 포토카드 뽑기 연출
+function openReveal(k) {
+  const c = cardBy(k); if (!c) return;
+  const sp = S.fan.special[k];
+  sheet(`<h3>오늘의 포토카드</h3>
+    <div class="reveal"><div class="flip">${cardHTML(k, 'close')}</div></div>
+    <div class="rar-big ${sp ? 'sp' : c.r}">${sp ? `✨ ${esc(sp.label)} 한정 카드!` : c.r === 'SR' ? '✨ 슈퍼레어!' : c.r === 'R' ? '💎 레어!' : '🃏 일반'}</div>
+    <p class="muted" style="text-align:center;margin:0 0 14px">${esc(c.t)}</p>
+    <div class="sheet-btns"><button class="btn ghost" data-act="close">닫기</button><button class="btn primary" data-act="view-card" data-k="${esc(k)}">자세히</button></div>`, '포토카드');
+}
+function openCardView(k) {
+  const c = cardBy(k); if (!c) return;
+  const sp = S.fan.special[k], got = S.fan.cards[k];
+  sheet(`<div style="max-width:${c.b[2] / c.b[3] > 1.1 ? 520 : 300}px;margin:0 auto 12px">${cardHTML(k, 'close')}</div>
+    <p style="margin:0 0 4px;font-weight:700">${sp ? `${esc(sp.label)} 한정` : RAR[c.r]} 카드</p>
+    <p class="muted" style="margin:0 0 14px">${esc(c.t)}${got ? `<br>${got.replaceAll('-', '.')}에 받음` : ''}</p>
+    <div class="btn-row"><button class="btn primary sm" data-act="play" data-id="${esc(c.id)}">▶ 영상 보기</button>
+    <button class="btn ghost sm" data-act="set-bg" data-k="${esc(k)}">배경 사진으로</button>
+    <button class="btn danger sm" data-act="hide-card" data-k="${esc(k)}">이 카드 숨기기</button></div>`, '포토카드');
+}
+function openPlayer(id) {
+  const v = videoBy(id) || { id, t: '' }, vert = v.k === 'B';
+  if (!S.fan.seen.includes(id)) { S.fan.seen.push(id); save(); }
+  sheet(`<div class="player ${vert ? 'v' : ''}"><iframe src="https://www.youtube-nocookie.com/embed/${encodeURIComponent(id)}?playsinline=1&rel=0&autoplay=1" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen title="영상"></iframe></div>
+    <p style="margin:10px 0 12px;font-weight:600">${esc(v.t || '')}</p>
+    <div class="sheet-btns"><button class="btn ghost" data-act="close">닫기</button><a class="btn ghost" href="https://youtu.be/${encodeURIComponent(id)}" target="_blank" rel="noopener">유튜브에서 보기</a></div>`, '영상');
+}
+function openVideoList() {
+  const seen = new Set(S.fan.seen);
+  sheet(`<h3>최근 ${esc(singerName())} 영상</h3>
+    ${S.fan.feed.length ? S.fan.feed.map(v => `<button class="mp" style="display:flex;gap:10px;align-items:center" data-act="play" data-id="${esc(v.id)}">
+      <img src="${ytThumb(v.id)}" alt="" loading="lazy" style="width:110px;aspect-ratio:16/9;object-fit:cover;border-radius:8px;flex:none">
+      <span style="min-width:0;font-size:14px">${seen.has(v.id) ? '' : '<b style="color:var(--warn)">NEW </b>'}${esc(v.t)}<br><span class="muted">${v.at ? v.at.slice(0, 10).replaceAll('-', '.') : ''}</span></span></button>`).join('')
+      : '<div class="empty-txt">영상 목록을 불러오지 못했어요. 인터넷 연결을 확인해 주세요.</div>'}
+    <div style="margin-top:12px"><button class="btn ghost" style="width:100%" data-act="close">닫기</button></div>`, '최근 영상');
+}
+// 숏츠 피드: 위로 넘기면 화면에 들어온 영상만 플레이어를 띄움
+let shortsObs = null;
+function openShorts() {
+  const seed = hash(todayStr());
+  const rest = VIDEOS.filter(v => v.k === 'B' && !S.fan.feed.some(f => f.id === v.id))
+    .map((v, i) => [hash(v.id) ^ seed, v]).sort((a, b) => a[0] - b[0]).map(x => x[1]);
+  const list = [...S.fan.feed.filter(v => v.k === 'B'), ...rest].slice(0, 60);
+  if (!list.length) { toast('숏츠 목록을 불러오지 못했어요.'); return; }
+  const el = document.createElement('div'); el.className = 'shorts'; el.id = 'shorts';
+  el.innerHTML = list.map(v => `<div class="slide" data-id="${esc(v.id)}"><div class="sv" style="background-image:url('${ytThumb(v.id, 'oardefault')}')"></div><div class="cap">${esc(v.t)}</div></div>`).join('');
+  document.body.append(el);
+  const x = document.createElement('button'); x.className = 'shorts-x'; x.dataset.act = 'shorts-close'; x.textContent = '✕'; x.setAttribute('aria-label', '닫기');
+  const hint = document.createElement('div'); hint.className = 'shorts-hint'; hint.textContent = '위로 넘겨서 다음 영상';
+  document.body.append(x, hint); setTimeout(() => hint.remove(), 2500);
+  document.body.style.overflow = 'hidden';
+  shortsObs = new IntersectionObserver(es => es.forEach(e => {
+    const sv = e.target.querySelector('.sv');
+    if (e.isIntersecting) {
+      if (!sv.querySelector('iframe')) sv.innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${encodeURIComponent(e.target.dataset.id)}?playsinline=1&rel=0&autoplay=1&loop=1" allow="autoplay; encrypted-media" title="숏츠"></iframe>`;
+      if (!S.fan.seen.includes(e.target.dataset.id)) { S.fan.seen.push(e.target.dataset.id); save(); }
+    } else sv.innerHTML = '';
+  }), { root: el, threshold: 0.6 });
+  el.querySelectorAll('.slide').forEach(s => shortsObs.observe(s));
+}
+function closeShorts() {
+  if (shortsObs) shortsObs.disconnect(); shortsObs = null;
+  document.querySelectorAll('#shorts,.shorts-x,.shorts-hint').forEach(e => e.remove());
+  document.body.style.overflow = '';
+  render();
+}
+function openProfileSheet() {
+  const pf = S.fan.profile;
+  sheet(`<form data-form="profile"><h3>${esc(singerName())} 프로필</h3>
+    <div class="f"><span class="muted" style="font-weight:600;font-size:13px">덕질 시작일 (함께한 날 계산)</span>${datePick('since', pf.since, { max: todayStr(), none: true })}</div>
+    <div class="f"><span class="muted" style="font-weight:600;font-size:13px">생일 (이날 목표를 채우면 한정 카드)</span>${datePick('birthday', pf.birthday, { none: true })}</div>
+    <div class="f"><span class="muted" style="font-weight:600;font-size:13px">데뷔일 (이날 목표를 채우면 한정 카드)</span>${datePick('debut', pf.debut, { none: true })}</div>
+    <label class="f">팬덤명<input type="text" name="fandom" maxlength="20" value="${esc(pf.fandom)}" autocomplete="off"></label>
+    <label class="f">소속사<input type="text" name="agency" maxlength="30" value="${esc(pf.agency)}" autocomplete="off"></label>
+    <label class="f">최애곡<input type="text" name="fav" maxlength="40" value="${esc(pf.fav)}" autocomplete="off"></label>
+    <p class="muted" style="margin:0 0 12px">⭐ ${esc(singerName())} 카테고리로 등록한 일정(콘서트 등) 날에도 한정 카드가 나와요.</p>
+    <div class="sheet-btns"><button type="button" class="btn ghost" data-act="close">취소</button><button class="btn primary">저장</button></div></form>`, '프로필');
+}
+let diaryPhoto = null;
+function openDiarySheet() {
+  diaryPhoto = null;
+  sheet(`<form data-form="diary"><h3>덕질 기록</h3>
+    <label class="f">제목<input type="text" name="text" required maxlength="60" autocomplete="off"></label>
+    <div class="f"><span class="muted" style="font-weight:600;font-size:13px">날짜</span>${datePick('date', todayStr())}</div>
+    <div class="f"><span class="muted" style="font-weight:600;font-size:13px">종류</span><select name="kind" style="margin-top:5px">${DIARY_KINDS.map(([k, l]) => `<option value="${k}">${l}</option>`).join('')}</select></div>
+    <label class="f">장소 (선택)<input type="text" name="place" maxlength="60" autocomplete="off"></label>
+    <label class="f">메모 (선택)<textarea name="memo" maxlength="1000"></textarea></label>
+    <div class="f"><label class="btn ghost sm file-btn" id="diary-photo-btn">📷 사진 넣기 (선택)<input type="file" accept="image/*" data-file="diary-photo"></label></div>
+    <div class="sheet-btns"><button type="button" class="btn ghost" data-act="close">취소</button><button class="btn primary">저장</button></div></form>`, '덕질 기록');
+}
+// 사진을 줄여서 dataURL로 (폰 저장 공간 아끼기)
+function shrinkImage(file, max, q, done) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    const img = new Image();
+    img.onload = () => {
+      const r = Math.min(1, max / Math.max(img.width, img.height));
+      const c = document.createElement('canvas'); c.width = Math.round(img.width * r); c.height = Math.round(img.height * r);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      done(c.toDataURL('image/jpeg', q));
+    };
+    img.onerror = () => toast('이 사진은 불러올 수 없어요.');
+    img.src = reader.result;
+  };
+  reader.readAsDataURL(file);
+}
+
 function renderSettings() {
   const st = S.settings;
-  const photo = (st.photo || '').startsWith('data:image/') ? st.photo : '';
   return `
   <div class="top"><h1>설정</h1></div>
   <section class="card">
@@ -1032,11 +1405,16 @@ function renderSettings() {
   </section>
 
   <section class="card">
-    <h2>응원 사진</h2>
-    <p class="muted" style="margin:0 0 10px">할 일 탭 맨 위 코치 카드에 보여요. 사진은 이 폰에만 저장돼요.</p>
-    ${photo ? `<img class="photo-prev" src="${esc(photo)}" alt="응원 사진 미리보기">` : ''}
-    <div class="btn-row"><label class="btn ghost sm file-btn">${photo ? '사진 바꾸기' : '사진 고르기'}<input type="file" accept="image/*" data-file="photo"></label>
-    ${photo ? '<button class="btn danger sm" data-act="del-photo">사진 지우기</button>' : ''}</div>
+    <h2>테마</h2>
+    <div class="lbl" style="font-weight:600;font-size:14px;margin-bottom:6px">포인트 색</div>
+    <div class="acc-pick">${ACCENTS.map(c => `<button style="--c:${c}" class="${(S.fan.theme.accent || ACCENTS[0]) === c ? 'on' : ''}" data-act="accent" data-v="${c}" aria-label="색 ${c}"></button>`).join('')}
+      <input type="color" value="${hexOk(S.fan.theme.accent) ? S.fan.theme.accent : ACCENTS[0]}" data-accent aria-label="직접 고르기"></div>
+    <div class="lbl" style="font-weight:600;font-size:14px;margin-bottom:6px">배경 사진</div>
+    <p class="muted" style="margin:0 0 10px">홈·${esc(singerName())} 탭 맨 위와 할 일 코치 카드에 보여요. 포토카드를 눌러 '배경 사진으로'를 고르거나, 내 사진을 올릴 수 있어요.</p>
+    ${bgHTML() ? `<div class="banner">${bgHTML()}</div>` : ''}
+    <div class="btn-row"><button class="btn ghost sm" data-act="tab" data-tab="fan">포토카드에서 고르기</button>
+    <label class="btn ghost sm file-btn">내 사진 올리기<input type="file" accept="image/*" data-file="photo"></label>
+    ${S.fan.theme.bg ? '<button class="btn danger sm" data-act="del-photo">배경 없애기</button>' : ''}</div>
   </section>
 
   <section class="card">
@@ -1061,17 +1439,6 @@ function renderSettings() {
     ${S.cats.map(c => `<div class="song"><i class="dot cat lg" style="--c:${c.color}"></i>
       <button class="song-t" style="text-align:left" data-act="edit-cat" data-id="${esc(c.id)}"><div>${esc(catName(c))}</div><small>${S.events.filter(e => catById(e.type).id === c.id).length}개 일정</small></button>
       ${c.id === 'me' || c.id === 'fan' ? '' : `<button class="x" data-act="del-cat" data-id="${esc(c.id)}" aria-label="삭제">✕</button>`}</div>`).join('')}
-  </section>
-
-  <section class="card">
-    <h2>보상 노래 (${esc(singerName())})</h2>
-    <p class="muted" style="margin:0 0 6px">하루 목표를 채우면 이 중 한 곡이 열려요. 유튜브나 음원 앱 공유 링크를 붙여 넣으세요.</p>
-    ${(st.songs || []).map((s, i) => `<div class="song"><div class="song-t"><div>${esc(s.title || '제목 없음')}</div><small>${esc(s.url)}</small></div><button class="x" data-act="del-song" data-i="${i}" aria-label="삭제">✕</button></div>`).join('') || '<div class="empty-txt">아직 등록한 노래가 없어요.</div>'}
-    <form class="song-form" data-form="add-song">
-      <input type="text" name="stitle" placeholder="노래 제목" maxlength="60" autocomplete="off">
-      <input type="url" name="surl" placeholder="https://youtu.be/..." autocomplete="off" inputmode="url">
-      <button class="btn primary">노래 추가</button>
-    </form>
   </section>
 
   <section class="card">
@@ -1195,7 +1562,43 @@ document.addEventListener('click', e => {
     case 'add-event': openEventSheet(el.dataset.d || selDay); break;
     case 'close': case 'close-bg': closeSheet(); break;
     case 'nudge': nudge++; render(); break;
-    case 'reroll': rewardShift++; render(); break;
+    case 'reward-locked': {
+      const left = goalN() - doneToday();
+      toast(goalN() ? `할 일 ${left}개 더 끝내면 열려요! 🔒` : '오늘 마감인 할 일을 정하고 끝내면 열려요.'); break;
+    }
+    case 'draw-card': {
+      if (!rewardOpen()) break;
+      if (!CARDS.length) { toast('포토카드를 불러오는 중이에요. 잠시 뒤 다시 눌러 주세요.'); loadFanData(); break; }
+      const k = drawCard(); if (!k) break;
+      render(); openReveal(k); if (S.fan.cards[k] === todayStr()) burst(); break;
+    }
+    case 'draw-memory': {
+      if (!rewardOpen()) break;
+      if (!VIDEOS.length) { toast('영상 목록을 불러오는 중이에요. 잠시 뒤 다시 눌러 주세요.'); loadFanData(); break; }
+      const id = drawMemory(); render(); if (id) openPlayer(id); break;
+    }
+    case 'new-videos': refreshFeed(); openVideoList(); break;
+    case 'shorts': openShorts(); break;
+    case 'shorts-close': closeShorts(); break;
+    case 'play': openPlayer(el.dataset.id); break;
+    case 'view-card': openCardView(el.dataset.k); break;
+    case 'set-bg': S.fan.theme.bg = el.dataset.k; save(); closeSheet(); render(); toast('배경 사진으로 정했어요.'); break;
+    case 'hide-card': {
+      if (!confirm('이 카드를 바인더에서 숨길까요? 앞으로 뽑기에도 나오지 않아요.\n(바인더 아래에서 되돌릴 수 있어요)')) break;
+      S.fan.hidden.push(el.dataset.k);
+      if (S.fan.theme.bg === el.dataset.k) S.fan.theme.bg = '';
+      save(); closeSheet(); render(); toast('카드를 숨겼어요.'); break;
+    }
+    case 'unhide': S.fan.hidden = []; save(); render(); toast('숨긴 카드를 되돌렸어요.'); break;
+    case 'binder': binderFilter = el.dataset.f; render(); break;
+    case 'edit-profile': openProfileSheet(); break;
+    case 'new-diary': openDiarySheet(); break;
+    case 'del-diary': {
+      const x = S.fan.diary.find(d => d.id === el.dataset.id);
+      if (x && confirm(`'${x.title}' 기록을 지울까요?`)) { S.fan.diary = S.fan.diary.filter(d => d.id !== x.id); save(); render(); }
+      break;
+    }
+    case 'accent': S.fan.theme.accent = el.dataset.v === ACCENTS[0] ? '' : el.dataset.v; save(); render(); break;
     case 'hide-install': S.ui.installHidden = true; save(); render(); break;
     case 'pri': newTaskPri = !newTaskPri; el.classList.toggle('on', newTaskPri); break;
     case 'filter': taskFilter = el.dataset.f; render(); break;
@@ -1234,8 +1637,7 @@ document.addEventListener('click', e => {
       break;
     }
     case 'manage-cats': closeSheet(); tab = 'set'; openProject = null; render(); { const s = $('#cats'); if (s) s.scrollIntoView(); } break;
-    case 'del-song': S.settings.songs.splice(Number(el.dataset.i), 1); save(); render(); break;
-    case 'del-photo': if (confirm('응원 사진을 지울까요?')) { S.settings.photo = null; save(); render(); } break;
+    case 'del-photo': if (confirm('배경 사진을 없앨까요?')) { S.fan.theme.bg = ''; S.settings.photo = null; save(); render(); } break;
     case 'export': exportData(); break;
     case 'reset':
       if (confirm('모든 할 일, 일정, 설정을 지울까요? 되돌릴 수 없어요.') && confirm('정말 초기화할까요?')) { S = defaults(); save(); tab = 'home'; render(); toast('초기화했어요.'); }
@@ -1278,10 +1680,17 @@ document.addEventListener('submit', e => {
     if (c) { c.color = color; if (el.text) c.name = name; }
     else S.cats.push({ id: uid(), name, color });
     save(); closeSheet(); render(); toast(c ? '카테고리를 수정했어요.' : '카테고리를 만들었어요.');
-  } else if (k === 'add-song') {
-    const title = el.stitle.value.trim(), url = el.surl.value.trim();
-    if (!safeUrl(url)) { toast('http:// 또는 https:// 로 시작하는 링크를 넣어 주세요.'); return; }
-    S.settings.songs.push({ title: title || singerName() + ' 노래', url }); save(); render(); toast('보상 노래를 추가했어요 🎵');
+  } else if (k === 'profile') {
+    const d = n => isDate(el[n].value) ? el[n].value : '';
+    Object.assign(S.fan.profile, { since: d('since'), birthday: d('birthday'), debut: d('debut'),
+      fandom: el.fandom.value.trim().slice(0, 20), agency: el.agency.value.trim().slice(0, 30), fav: el.fav.value.trim().slice(0, 40) });
+    save(); closeSheet(); render(); toast('프로필을 저장했어요.');
+  } else if (k === 'diary') {
+    const title = el.text.value.trim(), date = el.date.value;
+    if (!title || !isDate(date)) { toast('제목과 날짜를 입력해 주세요.'); return; }
+    S.fan.diary.push({ id: uid(), date, title: title.slice(0, 60), kind: DIARY_KINDS.some(([x]) => x === el.kind.value) ? el.kind.value : 'etc',
+      place: el.place.value.trim().slice(0, 60), memo: el.memo.value.trim().slice(0, 1000), photo: diaryPhoto });
+    diaryPhoto = null; save(); closeSheet(); render(); toast('덕질 기록을 남겼어요 💜');
   } else if (k === 'event') {
     const title = el.text.value.trim(), date = el.date.value;
     if (!title || !isDate(date)) { toast('제목과 날짜를 입력해 주세요.'); return; }
@@ -1294,23 +1703,16 @@ document.addEventListener('change', e => {
   const el = e.target;
   if (el.dataset.set) { S.settings[el.dataset.set] = el.value.trim(); save(); return; }
   if (el.dataset.file === 'photo' && el.files[0]) { setPhoto(el.files[0]); return; }
+  if (el.dataset.file === 'diary-photo' && el.files[0]) {
+    shrinkImage(el.files[0], 720, 0.7, url => { diaryPhoto = url; const b = $('#diary-photo-btn'); if (b) b.firstChild.textContent = '📷 사진 넣음 ✓ (바꾸기)'; });
+    return;
+  }
+  if (el.matches('[data-accent]') && hexOk(el.value)) { S.fan.theme.accent = el.value; save(); render(); return; }
   if (el.dataset.file === 'import' && el.files[0]) { importData(el.files[0]); el.value = ''; }
 });
 
 function setPhoto(file) {
-  const reader = new FileReader();
-  reader.onload = () => {
-    const img = new Image();
-    img.onload = () => {
-      const max = 900, r = Math.min(1, max / Math.max(img.width, img.height));
-      const c = document.createElement('canvas'); c.width = Math.round(img.width * r); c.height = Math.round(img.height * r);
-      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-      S.settings.photo = c.toDataURL('image/jpeg', 0.82); save(); render(); toast('응원 사진을 바꿨어요.');
-    };
-    img.onerror = () => toast('이 사진은 불러올 수 없어요.');
-    img.src = reader.result;
-  };
-  reader.readAsDataURL(file);
+  shrinkImage(file, 900, 0.82, url => { S.settings.photo = url; S.fan.theme.bg = 'upload'; save(); render(); toast('배경 사진을 바꿨어요.'); });
 }
 function exportData() {
   const blob = new Blob([JSON.stringify(S, null, 2)], { type: 'application/json' });
@@ -1332,7 +1734,7 @@ function importData(file) {
 
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) return;
-  render(); queuePushSync();
+  render(); queuePushSync(); refreshFeed();
   if ('serviceWorker' in navigator) navigator.serviceWorker.getRegistration().then(r => r && r.update()).catch(() => {}); // 새 버전 확인
 });
 
@@ -1361,6 +1763,7 @@ if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
 
 render();
 queuePushSync();
+loadFanData();
 })();
 </script>
 </body>

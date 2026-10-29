@@ -1,6 +1,6 @@
 // 앱 코드를 고친 뒤에는 아래 버전 숫자를 올려 주세요 (v1 → v2). 그래야 폰에 새 버전이 반영돼요.
-const CACHE = 'gyeolsim-v19';
-const ASSETS = ['./', './index.html', './manifest.json', './icons/icon-180.png', './icons/icon-192.png', './icons/icon-512.png'];
+const CACHE = 'gyeolsim-v20';
+const ASSETS = ['./', './index.html', './manifest.json', './icons/icon-180.png', './icons/icon-192.png', './icons/icon-512.png', './data/cards.json', './data/videos.json'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
@@ -25,6 +25,15 @@ self.addEventListener('fetch', e => {
         return res;
       }).catch(() => caches.match('./index.html'))
     );
+    return;
+  }
+
+  // 포토카드·영상 목록은 네트워크 우선 (검수해서 바뀌면 바로 반영), 오프라인이면 캐시
+  if (new URL(req.url).pathname.includes('/data/')) {
+    e.respondWith(fetch(req, { cache: 'no-store' }).then(res => {
+      if (res.ok) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(req.url.split('?')[0], copy)); }
+      return res;
+    }).catch(() => caches.match(req.url.split('?')[0])));
     return;
   }
 

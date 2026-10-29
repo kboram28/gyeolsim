@@ -1,0 +1,19 @@
+<!doctype html><meta charset=utf-8>
+<script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.13/dist/face-api.js"></script>
+<script>
+const M='https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.13/model/';
+window.ready=(async()=>{await faceapi.nets.ssdMobilenetv1.loadFromUri(M);await faceapi.nets.faceLandmark68Net.loadFromUri(M);await faceapi.nets.faceRecognitionNet.loadFromUri(M);await faceapi.nets.faceExpressionNet.loadFromUri(M);return true})();
+const load=src=>new Promise((ok,no)=>{const i=new Image();i.crossOrigin='anonymous';i.onload=()=>ok(i);i.onerror=()=>no();i.src=src});
+function trim(c){const x=c.getContext('2d'),w=c.width,h=c.height,d=x.getImageData(0,0,w,h).data;
+ const px=(i,j)=>{const o=(j*w+i)*4;return[d[o],d[o+1],d[o+2]]};
+ const flat=(get,n)=>{const v=[];for(let t=0;t<n;t+=2)v.push(get(t));const lum=v.map(p=>p[0]+p[1]+p[2]).sort((a,b)=>a-b);const med=lum[lum.length>>1];const same=lum.filter(l=>Math.abs(l-med)<36).length/lum.length;return same>0.9&&(med<90||med>690||(()=>{let m=[0,0,0];for(const p of v){m[0]+=p[0];m[1]+=p[1];m[2]+=p[2]}m=m.map(a=>a/v.length);return Math.max(...m)-Math.min(...m)<14})())};
+ let t=0,b=h-1,l=0,r=w-1;while(t<h*0.6&&flat(i=>px(i,t),w))t++;while(b>h*0.4&&b>t+40&&flat(i=>px(i,b),w))b--;while(l<w*0.6&&flat(j=>px(l,j),h))l++;while(r>w*0.4&&r>l+40&&flat(j=>px(r,j),h))r--;
+ return{x:l,y:t,w:r-l+1,h:b-t+1}}
+function dhash(c){const s=document.createElement('canvas');s.width=9;s.height=8;const x=s.getContext('2d');x.drawImage(c,0,0,9,8);const d=x.getImageData(0,0,9,8).data;let h='';for(let y=0;y<8;y++)for(let i=0;i<8;i++){const a=(y*9+i)*4,b=a+4;h+=(d[a]+d[a+1]+d[a+2])>(d[b]+d[b+1]+d[b+2])?'1':'0'}return h}
+const ear=e=>{const D=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);return(D(e[1],e[5])+D(e[2],e[4]))/(2*D(e[0],e[3]))};
+window.analyze=async(c0)=>{for(const q of c0.qs){try{const img=await load('https://i.ytimg.com/vi/'+c0.id+'/'+q+'.jpg');if(img.naturalWidth<300)continue;
+ const cv=document.createElement('canvas');cv.width=img.naturalWidth;cv.height=img.naturalHeight;cv.getContext('2d').drawImage(img,0,0);
+ let box=trim(cv);if(c0.k==='B'&&box.w>box.h){const nw=Math.round(box.h*9/16);const sub=document.createElement('canvas');sub.width=nw;sub.height=box.h;const ox=box.x+Math.round((box.w-nw)/2);sub.getContext('2d').drawImage(cv,ox,box.y,nw,box.h,0,0,nw,box.h);const b2=trim(sub);box={x:ox+b2.x,y:box.y+b2.y,w:b2.w,h:b2.h}}const tc=document.createElement('canvas');tc.width=box.w;tc.height=box.h;tc.getContext('2d').drawImage(cv,box.x,box.y,box.w,box.h,0,0,box.w,box.h);
+ const det=await faceapi.detectAllFaces(tc,new faceapi.SsdMobilenetv1Options({minConfidence:0.5})).withFaceLandmarks().withFaceExpressions().withFaceDescriptors();
+ return{q,w:img.naturalWidth,h:img.naturalHeight,box,hash:dhash(tc),faces:det.map(f=>{const b=f.detection.box,lm=f.landmarks;return{score:+f.detection.score.toFixed(3),x:b.x,y:b.y,w:b.width,h:b.height,earL:+ear(lm.getLeftEye()).toFixed(3),earR:+ear(lm.getRightEye()).toFixed(3),expr:Object.entries(f.expressions).sort((a,b)=>b[1]-a[1])[0],desc:Array.from(f.descriptor).map(v=>+v.toFixed(4))}})}}catch(e){}}return null};
+</script>

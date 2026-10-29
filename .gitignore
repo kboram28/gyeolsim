@@ -1,2 +1,4 @@
 node_modules/
 .wrangler/
+tools/photocards/*.json
+!tools/photocards/review.json
