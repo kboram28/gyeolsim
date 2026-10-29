@@ -22,7 +22,7 @@ export default {
     };
     if (req.method === 'OPTIONS') return new Response(null, { headers: cors });
     const json = (o, status = 200) => new Response(JSON.stringify(o), { status, headers: { ...cors, 'Content-Type': 'application/json' } });
-    if (req.method === 'GET' && new URL(req.url).pathname === '/videos') return videos(req, cors);
+    if (req.method === 'GET' && new URL(req.url).pathname === '/videos') return videos(env, cors);
     if (req.method !== 'POST') return json({ ok: true, service: 'gyeolsim-push' });
 
     let body;
@@ -147,14 +147,18 @@ async function sendPush(env, sub, msg) {
   });
 }
 
-// 김결 유튜브 채널 최신 영상 15개 (YouTube RSS). 앱의 '오늘의 김결 영상'에 쓰임
-async function videos(req, cors) {
+// 김결 유튜브 채널 최신 영상 (YouTube RSS, 막히면 채널 페이지). 앱의 '오늘의 김결 영상'에 쓰임
+async function videos(env, cors) {
   const cache = caches.default, ck = new Request('https://cache.local/videos');
   let res = await cache.match(ck);
   if (!res) {
-    const r = await fetch('https://www.youtube.com/feeds/videos.xml?channel_id=' + YT_CHANNEL);
-    if (!r.ok) return new Response(JSON.stringify({ items: [] }), { status: 502, headers: { ...cors, 'Content-Type': 'application/json' } });
-    const items = parseFeed(await r.text());
+    let items = [];
+    try {
+      const r = await fetch('https://www.youtube.com/feeds/videos.xml?channel_id=' + YT_CHANNEL);
+      if (r.ok) items = parseFeed(await r.text());
+    } catch {}
+    if (!items.length) try { items = await channelPage(env); } catch {}
+    if (!items.length) return new Response(JSON.stringify({ items: [] }), { status: 502, headers: { ...cors, 'Content-Type': 'application/json' } });
     res = new Response(JSON.stringify({ items }), { headers: { 'Content-Type': 'application/json', 'Cache-Control': 'max-age=' + VIDEOS_TTL } });
     await cache.put(ck, res.clone());
   }
@@ -169,4 +173,39 @@ function parseFeed(xml) {
     const short = /\/shorts\//.test((e.match(/<link rel="alternate" href="([^"]+)"/) || [])[1] || '');
     return id && { id, t: t.slice(0, 120), at, k: short ? 'B' : /^\d{6,7}\s/.test(t) ? 'L' : 'A' };
   }).filter(Boolean);
+}
+
+// RSS가 404일 때: 채널의 영상·숏츠·라이브 탭 첫 화면. 영상·라이브는 'n일 전'으로 날짜를 셈,
+// 숏츠는 날짜가 없어서 처음 본 시각을 KV에 기억함 (처음 한 번은 전부 예전 것으로 침)
+const AGO = { 초: 1, 분: 60, 시간: 3600, 일: 86400, 주: 604800, 개월: 2592000, 년: 31536000 };
+async function channelPage(env) {
+  const now = Date.now(), items = [];
+  for (const [tab, k] of [['videos', 'A'], ['shorts', 'B'], ['streams', 'L']]) {
+    const h = await (await fetch('https://www.youtube.com/@Gyeol_Kim/' + tab + '?hl=ko', { headers: { 'User-Agent': 'Mozilla/5.0', 'Accept-Language': 'ko' } })).text();
+    const m = h.match(/var ytInitialData = (\{.*?\});<\/script>/s);
+    if (!m) continue;
+    (function walk(o) {
+      if (!o || typeof o !== 'object') return;
+      if (o.lockupViewModel?.contentId) {
+        const s = JSON.stringify(o.lockupViewModel), a = s.match(/"content":"[^"]*?(\d+)\s*(초|분|시간|일|주|개월|년) 전"/);
+        items.push({ id: o.lockupViewModel.contentId, t: o.lockupViewModel.metadata?.lockupMetadataViewModel?.title?.content || '', at: a ? new Date(now - a[1] * AGO[a[2]] * 1000).toISOString() : '', k });
+        return;
+      }
+      if (o.shortsLockupViewModel) {
+        const v = o.shortsLockupViewModel;
+        items.push({ id: v.onTap?.innertubeCommand?.reelWatchEndpoint?.videoId, t: v.overlayMetadata?.primaryText?.content || '', at: '', k });
+        return;
+      }
+      for (const key in o) walk(o[key]);
+    })(JSON.parse(m[1]));
+  }
+  const shorts = items.filter(i => i.k === 'B' && i.id);
+  if (shorts.length) {
+    const first = await env.PUSH.get('yt:shorts', 'json'), seen = first || {};
+    for (const i of shorts) { if (!seen[i.id]) seen[i.id] = first ? new Date(now).toISOString() : '2000-01-01T00:00:00Z'; i.at = seen[i.id]; }
+    const keep = Object.fromEntries(shorts.map(i => [i.id, seen[i.id]]));
+    if (JSON.stringify(keep) !== JSON.stringify(first)) await env.PUSH.put('yt:shorts', JSON.stringify(keep));
+  }
+  return items.filter(i => /^[\w-]{11}$/.test(i.id || '') && i.at).map(i => ({ ...i, t: i.t.slice(0, 120) }))
+    .sort((a, b) => Date.parse(b.at) - Date.parse(a.at)).slice(0, 30);
 }
