@@ -144,6 +144,12 @@ ul.list{list-style:none;margin:0;padding:0}
 .chip.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .sort-row{display:flex;gap:6px;align-items:center;margin:0 0 10px;font-size:13px;color:var(--sub)}
 .chip.sm{padding:4px 11px;font-size:12.5px}
+.sort-row .ro-btn{margin-left:auto}
+.ro-n{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--pri-soft);color:var(--pri);font-weight:800;font-size:14px}
+.ro-b{flex:none;width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--sub);font-size:13px}
+.ro-b:disabled{opacity:.3}
+.drag{flex:none;touch-action:none;cursor:grab;padding:8px 2px 8px 6px;color:var(--sub);font-size:22px;line-height:1;user-select:none;-webkit-user-select:none}
+.task.dragging{background:var(--pri-soft);border-radius:12px;box-shadow:0 6px 18px #0003}
 .pri-pick{display:flex;gap:6px}
 .pri-pick label{position:relative}
 .pri-pick input{position:absolute;opacity:0;pointer-events:none}
@@ -351,7 +357,7 @@ textarea{font:inherit;font-size:16px;width:100%;padding:11px 12px;border:1px sol
 (() => {
 'use strict';
 const KEY = 'gyeolsim-v1';
-const APP_VERSION = 'v22'; // sw.js의 CACHE 숫자와 같이 올리기
+const APP_VERSION = 'v23'; // sw.js의 CACHE 숫자와 같이 올리기
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
@@ -404,10 +410,18 @@ function normFan(f) {
     theme: { accent: '', bg: '', ...obj(f.theme) }
   };
 }
+// 순위가 없거나 겹치는 할 일을 1, 2, 3…으로 다시 매김. 순위가 없던 건 중요한 일·마감 빠른 일·먼저 등록한 일 순서로 뒤에 붙임
+function rankTasks(ts) {
+  const pr = t => t.priority === 'high' ? 0 : t.priority === 'low' ? 2 : 1;
+  [...ts].sort((a, b) => (Number.isFinite(a.rank) ? a.rank : 1e9) - (Number.isFinite(b.rank) ? b.rank : 1e9) || pr(a) - pr(b)
+    || (a.due || '9999-12-31').localeCompare(b.due || '9999-12-31') || (a.createdAt || 0) - (b.createdAt || 0))
+    .forEach((t, i) => { t.rank = i + 1; });
+  return ts;
+}
 function normalize(d) {
   const b = defaults();
   return {
-    tasks: Array.isArray(d.tasks) ? d.tasks.filter(t => t && t.id && t.title) : [],
+    tasks: rankTasks(Array.isArray(d.tasks) ? d.tasks.filter(t => t && t.id && t.title) : []),
     events: Array.isArray(d.events) ? d.events.filter(e => e && e.id && isDate(e.date)) : [],
     projects: Array.isArray(d.projects) ? d.projects.filter(p => p && p.id && p.title) : [],
     cats: normCats(d.cats),
@@ -551,7 +565,7 @@ function coachPool() {
   const { sit, v } = coachState();
   const t = todayStr(), h = new Date().getHours();
   const active = todoTasks().filter(x => !x.done);
-  const urgent =(a, b) => priRank(a) - priRank(b) || (b.carry || 0) - (a.carry || 0) || taskSort(a, b);
+  const urgent = (a, b) => sortMode() === 'rank' ? taskSort(a, b) : priRank(a) - priRank(b) || (b.carry || 0) - (a.carry || 0) || taskSort(a, b);
   const dueToday = active.filter(x => x.due === t).sort(urgent).slice(0, 3);
   const carried = active.filter(x => x.carry).sort(urgent).slice(0, 3);
   const soon = active.filter(x => x.due && x.due > t && daysBetween(t, x.due) <= 3).sort(taskSort).slice(0, 2);
@@ -598,7 +612,7 @@ const pushSupported = () => 'serviceWorker' in navigator && 'PushManager' in win
 // 오늘·내일 알림 시각마다, 그날 남은 할 일 이름을 넣은 코치 말을 미리 만들어 둠
 function pushItems() {
   const tone = TONE[S.settings.tone] || TONE.balanced, now = Date.now(), items = [];
-  const urgent = (a, b) => priRank(a) - priRank(b) || (b.carry || 0) - (a.carry || 0) || taskSort(a, b);
+  const urgent = (a, b) => sortMode() === 'rank' ? taskSort(a, b) : priRank(a) - priRank(b) || (b.carry || 0) - (a.carry || 0) || taskSort(a, b);
   for (let off = 0; off < 2; off++) {
     const day = new Date(); day.setDate(day.getDate() + off);
     const ds = ymd(day);
@@ -838,12 +852,24 @@ const todoTasks = () => S.tasks.filter(inTodo);
 const PRI = { high: '높음', normal: '보통', low: '낮음' };
 const priRank = t => t.priority === 'high' ? 0 : t.priority === 'low' ? 2 : 1;
 const priPick = v => `<div class="pri-pick" role="radiogroup" aria-label="우선순위">${Object.keys(PRI).map(k => `<label><input type="radio" name="pri" value="${k}" ${k === (PRI[v] ? v : 'normal') ? 'checked' : ''}><span>${k === 'high' ? '★ ' : ''}${PRI[k]}</span></label>`).join('')}</div>`;
-// 정렬: 설정의 '우선순위순'(기본)이면 우선순위 → 마감일, '마감일순'이면 마감일 → 우선순위. 같으면 등록 순
+// 정렬: '내 순서'(기본)는 직접 정한 순위, '우선순위순'은 우선순위 → 마감일, '마감일순'은 마감일 → 우선순위
+const sortMode = () => ['pri', 'due'].includes(S.ui.taskSort) ? S.ui.taskSort : 'rank';
 function taskSort(a, b) {
+  if (sortMode() === 'rank') return (a.rank || 0) - (b.rank || 0);
   const ad = a.due || '9999-12-31', bd = b.due || '9999-12-31';
   const byDue = ad === bd ? 0 : ad < bd ? -1 : 1, byPri = priRank(a) - priRank(b);
-  return (S.ui.taskSort === 'due' ? byDue || byPri : byPri || byDue) || (a.createdAt || 0) - (b.createdAt || 0);
+  return (sortMode() === 'due' ? byDue || byPri : byPri || byDue) || (a.createdAt || 0) - (b.createdAt || 0);
 }
+// 순서 바꾸는 중인 목록: 'tasks'(할 일 탭) 또는 프로젝트 id
+let reorder = null;
+// 화면에 보이는 할 일들의 새 순서대로, 그 할 일들이 갖고 있던 순위 번호를 다시 나눠 줌 (안 보이는 할 일의 자리는 그대로)
+function applyOrder(ids) {
+  const ts = ids.map(id => S.tasks.find(x => x.id === id)).filter(Boolean);
+  const ranks = ts.map(t => t.rank).sort((a, b) => a - b);
+  ts.forEach((t, i) => { t.rank = ranks[i]; });
+  save();
+}
+const roIds = el => [...el.closest('ul').querySelectorAll('li[data-id]')].map(li => li.dataset.id);
 function dueBadge(t) {
   if (!t.due) return '';
   if (t.done) return `<span class="badge">${fmtShort(t.due)}</span>`;
@@ -853,8 +879,13 @@ function dueBadge(t) {
   if (n === 0) return `<span class="badge hot">오늘</span>`;
   return `<span class="badge">D-${n}</span>`;
 }
-function taskItem(t, hideProj) {
+function taskItem(t, hideProj, ro) {
   const p = !hideProj && t.projectId ? projById(t.projectId) : null;
+  if (ro) return `<li class="task" data-id="${esc(t.id)}"><span class="ro-n">${ro.n}</span>
+    <div class="t-main"><div class="t-title">${t.priority === 'high' ? '<span class="star">★</span>' : ''}${esc(t.title)}</div>
+    <div class="t-meta">${p ? `<span class="badge pj" style="--c:${pjColor(p)}">📁 ${esc(p.title)}</span>` : ''}${dueBadge(t)}</div></div>
+    <button class="ro-b" data-act="ro-move" data-v="-1" aria-label="위로" ${ro.first ? 'disabled' : ''}>▲</button><button class="ro-b" data-act="ro-move" data-v="1" aria-label="아래로" ${ro.last ? 'disabled' : ''}>▼</button>
+    <span class="drag" aria-hidden="true">≡</span></li>`;
   return `<li class="task ${t.done ? 'done' : ''}">
     <button class="chk" data-act="toggle" data-id="${esc(t.id)}" aria-label="${t.done ? '완료 취소' : '완료'}">${t.done ? '✓' : ''}</button>
     <div class="t-main"><div class="t-title" data-act="edit-task" data-id="${esc(t.id)}">${t.priority === 'high' ? '<span class="star">★</span>' : ''}${esc(t.title)}</div>
@@ -863,7 +894,7 @@ function taskItem(t, hideProj) {
 }
 function addTask(title, due, pri, projectId) {
   title = title.trim(); if (!title) return false;
-  S.tasks.push({ id: uid(), title: title.slice(0, 100), due: isDate(due) ? due : null, priority: PRI[pri] ? pri : pri === true ? 'high' : 'normal', done: false, doneAt: null, createdAt: Date.now(), projectId: projectId && projById(projectId) ? projectId : null });
+  S.tasks.push({ id: uid(), rank: S.tasks.reduce((m, x) => Math.max(m, x.rank || 0), 0) + 1, title: title.slice(0, 100), due: isDate(due) ? due : null, priority: PRI[pri] ? pri : pri === true ? 'high' : 'normal', done: false, doneAt: null, createdAt: Date.now(), projectId: projectId && projById(projectId) ? projectId : null });
   save(); return true;
 }
 // 프로젝트의 마지막 세부 할 일을 끝냈는지 확인 (보너스는 프로젝트당 한 번)
@@ -966,7 +997,8 @@ function renderProjectDetail(p) {
   ${p.memo ? `<section class="card"><h2>메모</h2><p class="memo">${esc(p.memo)}</p></section>` : ''}
   <section class="card">
     <h2>세부 할 일</h2>
-    ${subs.length ? `<ul class="list">${subs.map(t => taskItem(t, true)).join('')}</ul>` : '<div class="empty-txt">아직 세부 할 일이 없어요.</div>'}
+    ${sortRow(p.id, subs.filter(t => !t.done).length)}
+    ${subs.length ? `<ul class="list">${(reorder === p.id ? subs.filter(t => !t.done) : subs).map((t, i, a) => taskItem(t, true, reorder === p.id && { n: i + 1, first: !i, last: i === a.length - 1 })).join('')}</ul>` : '<div class="empty-txt">아직 세부 할 일이 없어요.</div>'}
     <form data-form="sub-task" data-pid="${esc(p.id)}">
       <div class="add-row"><input type="text" name="text" placeholder="세부 할 일 추가" maxlength="100" autocomplete="off" enterkeyhint="done"><button class="btn primary">추가</button></div>
       <div class="add-opts"><div style="flex:1;min-width:0">${datePick('due', '', { min: todayStr(), max: p.end || '', none: true })}</div></div>
@@ -1230,6 +1262,12 @@ function timePick(value) {
 }
 const timeVal = el => el.th.value ? `${el.th.value}:${el.tm.value || '00'}` : '';
 
+// 정렬 버튼 줄. '내 순서'일 때는 '순서 바꾸기' 버튼도 보임
+function sortRow(key, n) {
+  const on = reorder === key;
+  return `<div class="sort-row">${on ? '<span>▲▼ 버튼이나 ≡를 끌어서 순서를 바꿔요</span>' : `정렬 ${[['rank', '내 순서'], ['pri', '우선순위순'], ['due', '마감일순']].map(([v, l]) => `<button class="chip sm ${sortMode() === v ? 'on' : ''}" data-act="task-sort" data-v="${v}">${l}</button>`).join('')}`}
+    ${sortMode() === 'rank' && n > 1 ? `<button class="chip sm ro-btn ${on ? 'on' : ''}" data-act="reorder" data-k="${esc(key)}">${on ? '완료' : '순서 바꾸기'}</button>` : ''}</div>`;
+}
 function renderTasks() {
   const t = todayStr();
   const groups = {
@@ -1245,9 +1283,9 @@ function renderTasks() {
   <div class="top"><h1>할 일</h1></div>
   ${coachHTML()}
   <div class="chips">${Object.keys(labels).map(k => `<button class="chip ${taskFilter === k ? 'on' : ''}" data-act="filter" data-f="${k}">${labels[k]}<span class="cnt">${groups[k].length}</span></button>`).join('')}</div>
-  ${taskFilter !== 'done' ? `<div class="sort-row">정렬 ${[['pri', '우선순위순'], ['due', '마감일순']].map(([v, l]) => `<button class="chip sm ${(S.ui.taskSort === 'due' ? 'due' : 'pri') === v ? 'on' : ''}" data-act="task-sort" data-v="${v}">${l}</button>`).join('')}</div>` : ''}
+  ${taskFilter !== 'done' ? sortRow('tasks', list.length) : ''}
   <section class="card">
-    ${list.length ? `<ul class="list">${list.map(x => taskItem(x)).join('')}</ul>` : `<div class="empty-txt">${empty[taskFilter]}</div>`}
+    ${list.length ? `<ul class="list">${list.map((x, i) => taskItem(x, false, reorder === 'tasks' && taskFilter !== 'done' && { n: i + 1, first: !i, last: i === list.length - 1 })).join('')}</ul>` : `<div class="empty-txt">${empty[taskFilter]}</div>`}
     ${taskFilter === 'done' && list.length ? '<button class="btn danger sm" style="margin-top:10px" data-act="clear-done">완료한 일 모두 지우기</button>' : ''}
   </section>
   <button class="fab" data-act="new-task" aria-label="할 일 추가">+</button>`;
@@ -1536,9 +1574,9 @@ document.addEventListener('click', e => {
   const a = el.dataset.act;
   if (a === 'close-bg' && e.target !== el) return;
   switch (a) {
-    case 'tab': tab = el.dataset.tab; nudge = 0; openProject = null; newTaskDue = todayStr(); render(); window.scrollTo(0, 0); break;
+    case 'tab': tab = el.dataset.tab; nudge = 0; openProject = null; reorder = null; newTaskDue = todayStr(); render(); window.scrollTo(0, 0); break;
     case 'open-proj': tab = 'proj'; openProject = el.dataset.id; render(); window.scrollTo(0, 0); break;
-    case 'close-proj': openProject = null; render(); window.scrollTo(0, 0); break;
+    case 'close-proj': openProject = null; reorder = null; render(); window.scrollTo(0, 0); break;
     case 'new-proj': openProjectSheet(null); break;
     case 'new-task': openTaskSheet(); break;
     case 'push-on': enablePush(); break;
@@ -1626,7 +1664,14 @@ document.addEventListener('click', e => {
     }
     case 'accent': S.fan.theme.accent = el.dataset.v === ACCENTS[0] ? '' : el.dataset.v; save(); render(); break;
     case 'hide-install': S.ui.installHidden = true; save(); render(); break;
-    case 'task-sort': S.ui.taskSort = el.dataset.v === 'due' ? 'due' : 'pri'; save(); render(); break;
+    case 'task-sort': S.ui.taskSort = ['pri', 'due'].includes(el.dataset.v) ? el.dataset.v : 'rank'; reorder = null; save(); render(); break;
+    case 'reorder': reorder = reorder === el.dataset.k ? null : el.dataset.k; render(); break;
+    case 'ro-move': {
+      const ids = roIds(el), i = ids.indexOf(el.closest('li').dataset.id), j = i + +el.dataset.v;
+      if (i < 0 || j < 0 || j >= ids.length) break;
+      [ids[i], ids[j]] = [ids[j], ids[i]]; applyOrder(ids); render();
+      break;
+    }
     case 'filter': taskFilter = el.dataset.f; render(); break;
     case 'dp-toggle': {
       const f = el.closest('.dpf'), open = !f.querySelector('.dp');
@@ -1669,6 +1714,28 @@ document.addEventListener('click', e => {
       if (confirm('모든 할 일, 일정, 설정을 지울까요? 되돌릴 수 없어요.') && confirm('정말 초기화할까요?')) { S = defaults(); save(); tab = 'home'; render(); toast('초기화했어요.'); }
       break;
   }
+});
+
+// ≡를 누른 채 위아래로 끌면 그 자리로 옮김
+document.addEventListener('pointerdown', e => {
+  const h = e.target.closest('.drag'); if (!h) return;
+  e.preventDefault();
+  const li = h.closest('li'), ul = li.parentNode;
+  li.classList.add('dragging');
+  const move = ev => {
+    if (ev.clientY < 70) window.scrollBy(0, -10); else if (ev.clientY > innerHeight - 110) window.scrollBy(0, 10);
+    for (const sib of ul.children) {
+      if (sib === li) continue;
+      const r = sib.getBoundingClientRect();
+      if (ev.clientY < r.top + r.height / 2) { if (li.nextElementSibling !== sib) ul.insertBefore(li, sib); return; }
+    }
+    if (ul.lastElementChild !== li) ul.appendChild(li);
+  };
+  const end = () => {
+    removeEventListener('pointermove', move); removeEventListener('pointerup', end); removeEventListener('pointercancel', end);
+    applyOrder(roIds(li)); render();
+  };
+  addEventListener('pointermove', move); addEventListener('pointerup', end); addEventListener('pointercancel', end);
 });
 
 document.addEventListener('submit', e => {
