@@ -139,11 +139,19 @@ ul.list{list-style:none;margin:0;padding:0}
 .dp .cal-head{margin-bottom:4px}
 .dp .cell{aspect-ratio:auto;height:38px;padding-top:0;justify-content:center}
 .dp .cell:disabled{opacity:.3;cursor:default}
-.pri-btn{flex:none;min-height:44px;padding:0 14px;border-radius:12px;border:1px solid var(--line);font-weight:600;color:var(--sub);background:var(--bg)}
-.pri-btn.on{background:var(--fan-soft);border-color:var(--fan);color:var(--fan)}
 .chips{display:flex;gap:6px;overflow-x:auto;margin:0 0 12px;padding-bottom:2px}
 .chip{flex:none;padding:7px 14px;border-radius:999px;background:var(--card);border:1px solid var(--line);font-size:14px;font-weight:600;color:var(--sub)}
 .chip.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.sort-row{display:flex;gap:6px;align-items:center;margin:0 0 10px;font-size:13px;color:var(--sub)}
+.chip.sm{padding:4px 11px;font-size:12.5px}
+.pri-pick{display:flex;gap:6px}
+.pri-pick label{position:relative}
+.pri-pick input{position:absolute;opacity:0;pointer-events:none}
+.pri-pick span{display:flex;align-items:center;min-height:44px;padding:0 14px;border-radius:12px;border:1px solid var(--line);font-weight:600;color:var(--sub);background:var(--bg)}
+.pri-pick input:checked+span{background:var(--fan-soft);border-color:var(--fan);color:var(--fan)}
+.pri-pick input[value=normal]:checked+span{background:var(--pri-soft);border-color:var(--pri);color:var(--pri)}
+.pri-pick input[value=low]:checked+span{background:var(--line);border-color:var(--sub);color:var(--ink)}
+.pri-pick input:focus-visible+span{outline:2px solid var(--pri);outline-offset:2px}
 .chip .cnt{margin-left:4px;opacity:.7}
 
 /* calendar */
@@ -343,7 +351,7 @@ textarea{font:inherit;font-size:16px;width:100%;padding:11px 12px;border:1px sol
 (() => {
 'use strict';
 const KEY = 'gyeolsim-v1';
-const APP_VERSION = 'v21'; // sw.js의 CACHE 숫자와 같이 올리기
+const APP_VERSION = 'v22'; // sw.js의 CACHE 숫자와 같이 올리기
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
@@ -435,7 +443,7 @@ let tab = 'home';
 let calCursor = (() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); })();
 let selDay = todayStr();
 let taskFilter = 'active';
-let nudge = 0, coachTick = 0, newTaskPri = false;
+let nudge = 0, coachTick = 0;
 let newTaskDue = todayStr(); // 할 일 추가 폼의 마감일 (기본: 오늘)
 let openProject = null;
 
@@ -543,7 +551,7 @@ function coachPool() {
   const { sit, v } = coachState();
   const t = todayStr(), h = new Date().getHours();
   const active = todoTasks().filter(x => !x.done);
-  const urgent =(a, b) => (b.priority === 'high') - (a.priority === 'high') || (b.carry || 0) - (a.carry || 0) || taskSort(a, b);
+  const urgent =(a, b) => priRank(a) - priRank(b) || (b.carry || 0) - (a.carry || 0) || taskSort(a, b);
   const dueToday = active.filter(x => x.due === t).sort(urgent).slice(0, 3);
   const carried = active.filter(x => x.carry).sort(urgent).slice(0, 3);
   const soon = active.filter(x => x.due && x.due > t && daysBetween(t, x.due) <= 3).sort(taskSort).slice(0, 2);
@@ -590,7 +598,7 @@ const pushSupported = () => 'serviceWorker' in navigator && 'PushManager' in win
 // 오늘·내일 알림 시각마다, 그날 남은 할 일 이름을 넣은 코치 말을 미리 만들어 둠
 function pushItems() {
   const tone = TONE[S.settings.tone] || TONE.balanced, now = Date.now(), items = [];
-  const urgent = (a, b) => (b.priority === 'high') - (a.priority === 'high') || (b.carry || 0) - (a.carry || 0) || taskSort(a, b);
+  const urgent = (a, b) => priRank(a) - priRank(b) || (b.carry || 0) - (a.carry || 0) || taskSort(a, b);
   for (let off = 0; off < 2; off++) {
     const day = new Date(); day.setDate(day.getDate() + off);
     const ds = ymd(day);
@@ -826,11 +834,15 @@ function projCard(p) {
 // 할 일 목록에 보일지: 프로젝트 세부 할 일은 마감 당일(또는 오늘 끝낸 것)만
 const inTodo = x => !x.projectId || x.due === todayStr() || (x.done && x.doneAt === todayStr());
 const todoTasks = () => S.tasks.filter(inTodo);
+// 우선순위: 높음(high) · 보통(normal) · 낮음(low)
+const PRI = { high: '높음', normal: '보통', low: '낮음' };
+const priRank = t => t.priority === 'high' ? 0 : t.priority === 'low' ? 2 : 1;
+const priPick = v => `<div class="pri-pick" role="radiogroup" aria-label="우선순위">${Object.keys(PRI).map(k => `<label><input type="radio" name="pri" value="${k}" ${k === (PRI[v] ? v : 'normal') ? 'checked' : ''}><span>${k === 'high' ? '★ ' : ''}${PRI[k]}</span></label>`).join('')}</div>`;
+// 정렬: 설정의 '우선순위순'(기본)이면 우선순위 → 마감일, '마감일순'이면 마감일 → 우선순위. 같으면 등록 순
 function taskSort(a, b) {
   const ad = a.due || '9999-12-31', bd = b.due || '9999-12-31';
-  if (ad !== bd) return ad < bd ? -1 : 1;
-  if (a.priority !== b.priority) return a.priority === 'high' ? -1 : 1;
-  return (a.createdAt || 0) - (b.createdAt || 0);
+  const byDue = ad === bd ? 0 : ad < bd ? -1 : 1, byPri = priRank(a) - priRank(b);
+  return (S.ui.taskSort === 'due' ? byDue || byPri : byPri || byDue) || (a.createdAt || 0) - (b.createdAt || 0);
 }
 function dueBadge(t) {
   if (!t.due) return '';
@@ -846,12 +858,12 @@ function taskItem(t, hideProj) {
   return `<li class="task ${t.done ? 'done' : ''}">
     <button class="chk" data-act="toggle" data-id="${esc(t.id)}" aria-label="${t.done ? '완료 취소' : '완료'}">${t.done ? '✓' : ''}</button>
     <div class="t-main"><div class="t-title" data-act="edit-task" data-id="${esc(t.id)}">${t.priority === 'high' ? '<span class="star">★</span>' : ''}${esc(t.title)}</div>
-    <div class="t-meta">${p ? `<span class="badge pj" style="--c:${pjColor(p)}">📁 ${esc(p.title)}</span>` : ''}${dueBadge(t)}</div></div>
+    <div class="t-meta">${p ? `<span class="badge pj" style="--c:${pjColor(p)}">📁 ${esc(p.title)}</span>` : ''}${t.priority === 'low' && !t.done ? '<span class="badge">낮음</span>' : ''}${dueBadge(t)}${t.detail ? '<span class="badge">📄 상세</span>' : ''}${t.note ? '<span class="badge">📝 메모</span>' : ''}</div></div>
     <button class="x" data-act="del-task" data-id="${esc(t.id)}" aria-label="삭제">✕</button></li>`;
 }
 function addTask(title, due, pri, projectId) {
   title = title.trim(); if (!title) return false;
-  S.tasks.push({ id: uid(), title: title.slice(0, 100), due: isDate(due) ? due : null, priority: pri ? 'high' : 'normal', done: false, doneAt: null, createdAt: Date.now(), projectId: projectId && projById(projectId) ? projectId : null });
+  S.tasks.push({ id: uid(), title: title.slice(0, 100), due: isDate(due) ? due : null, priority: PRI[pri] ? pri : pri === true ? 'high' : 'normal', done: false, doneAt: null, createdAt: Date.now(), projectId: projectId && projById(projectId) ? projectId : null });
   save(); return true;
 }
 // 프로젝트의 마지막 세부 할 일을 끝냈는지 확인 (보너스는 프로젝트당 한 번)
@@ -981,6 +993,21 @@ function openProjectSheet(p) {
       <div class="sheet-btns"><button type="button" class="btn ghost" data-act="close">취소</button><button class="btn primary">${isNew ? '만들기' : '저장'}</button></div>
     </form></div></div>`;
   if (isNew) setTimeout(() => { const i = $('#sheet input[name=text]'); if (i) i.focus(); }, 50);
+}
+// 할 일 수정: 이름·마감일·중요·상세 내용·완료 후 메모
+function openTaskEdit(t) {
+  const p = t.projectId && projById(t.projectId);
+  $('#sheet').innerHTML = `<div class="sheet-bg" data-act="close-bg"><div class="sheet" role="dialog" aria-label="할 일 수정">
+    <form data-form="task-edit" data-id="${esc(t.id)}">
+      <h3>할 일 수정</h3>
+      ${p ? `<div class="t-meta" style="margin:-4px 0 10px"><span class="badge pj" style="--c:${pjColor(p)}">📁 ${esc(p.title)}</span></div>` : ''}
+      <label class="f">할 일<input type="text" name="text" required maxlength="100" value="${esc(t.title)}" autocomplete="off"></label>
+      <div class="f"><span class="muted" style="font-weight:600;font-size:13px">마감일</span>${datePick('due', t.due || '', { max: p && p.end || '', none: true })}</div>
+      <div class="f"><span class="muted" style="font-weight:600;font-size:13px">우선순위</span>${priPick(t.priority)}</div>
+      <label class="f">상세 내용<textarea name="detail" maxlength="2000" placeholder="해야 할 범위, 참고 링크, 준비물 등">${esc(t.detail || '')}</textarea></label>
+      <label class="f">완료 후 메모<textarea name="note" maxlength="2000" placeholder="결과, 배운 점, 다음에 이어서 할 것">${esc(t.note || '')}</textarea></label>
+      <div class="sheet-btns"><button type="button" class="btn ghost" data-act="close">취소</button><button class="btn primary">저장</button></div>
+    </form></div></div>`;
 }
 
 // 이번 달과 기간이 겹치는 프로젝트 (기간 미정이면 아직 안 끝난 것만)
@@ -1218,6 +1245,7 @@ function renderTasks() {
   <div class="top"><h1>할 일</h1></div>
   ${coachHTML()}
   <div class="chips">${Object.keys(labels).map(k => `<button class="chip ${taskFilter === k ? 'on' : ''}" data-act="filter" data-f="${k}">${labels[k]}<span class="cnt">${groups[k].length}</span></button>`).join('')}</div>
+  ${taskFilter !== 'done' ? `<div class="sort-row">정렬 ${[['pri', '우선순위순'], ['due', '마감일순']].map(([v, l]) => `<button class="chip sm ${(S.ui.taskSort === 'due' ? 'due' : 'pri') === v ? 'on' : ''}" data-act="task-sort" data-v="${v}">${l}</button>`).join('')}</div>` : ''}
   <section class="card">
     ${list.length ? `<ul class="list">${list.map(x => taskItem(x)).join('')}</ul>` : `<div class="empty-txt">${empty[taskFilter]}</div>`}
     ${taskFilter === 'done' && list.length ? '<button class="btn danger sm" style="margin-top:10px" data-act="clear-done">완료한 일 모두 지우기</button>' : ''}
@@ -1226,14 +1254,14 @@ function renderTasks() {
 }
 
 function openTaskSheet() {
-  newTaskPri = false; newTaskDue = todayStr();
+  newTaskDue = todayStr();
   $('#sheet').innerHTML = `<div class="sheet-bg" data-act="close-bg"><div class="sheet" role="dialog" aria-label="할 일 추가">
     <form data-form="add-task">
       <h3>할 일 추가</h3>
       <label class="f">할 일<input type="text" name="text" required maxlength="100" autocomplete="off" enterkeyhint="done"></label>
       <div class="f"><span class="muted" style="font-weight:600;font-size:13px">마감일</span>${datePick('due', newTaskDue, { min: todayStr(), none: true })}</div>
       ${S.projects.length ? `<label class="f">프로젝트<select name="pid" aria-label="프로젝트" style="margin-top:5px"><option value="">프로젝트 없음</option>${[...S.projects].sort(projSort).map(p => `<option value="${esc(p.id)}">📁 ${esc(p.title)}</option>`).join('')}</select></label>` : ''}
-      <div class="f"><button type="button" class="pri-btn" data-act="pri">★ 중요</button></div>
+      <div class="f"><span class="muted" style="font-weight:600;font-size:13px">우선순위</span>${priPick('normal')}</div>
       <div class="sheet-btns"><button type="button" class="btn ghost" data-act="close">취소</button><button class="btn primary">추가</button></div>
     </form></div></div>`;
   setTimeout(() => { const i = $('#sheet input[name=text]'); if (i) i.focus(); }, 50);
@@ -1533,9 +1561,7 @@ document.addEventListener('click', e => {
       break;
     }
     case 'edit-task': {
-      const t = S.tasks.find(x => x.id === el.dataset.id); if (!t) break;
-      const v = prompt('할 일 이름 바꾸기', t.title);
-      if (v !== null && v.trim()) { t.title = v.trim().slice(0, 100); save(); render(); }
+      const t = S.tasks.find(x => x.id === el.dataset.id); if (t) openTaskEdit(t);
       break;
     }
     case 'toggle': toggleTask(el.dataset.id); break;
@@ -1600,7 +1626,7 @@ document.addEventListener('click', e => {
     }
     case 'accent': S.fan.theme.accent = el.dataset.v === ACCENTS[0] ? '' : el.dataset.v; save(); render(); break;
     case 'hide-install': S.ui.installHidden = true; save(); render(); break;
-    case 'pri': newTaskPri = !newTaskPri; el.classList.toggle('on', newTaskPri); break;
+    case 'task-sort': S.ui.taskSort = el.dataset.v === 'due' ? 'due' : 'pri'; save(); render(); break;
     case 'filter': taskFilter = el.dataset.f; render(); break;
     case 'dp-toggle': {
       const f = el.closest('.dpf'), open = !f.querySelector('.dp');
@@ -1669,9 +1695,17 @@ document.addEventListener('submit', e => {
     }
     save(); closeSheet(); tab = 'proj'; openProject = p.id; render(); window.scrollTo(0, 0);
     toast(f.dataset.id ? '프로젝트를 수정했어요.' : '프로젝트를 만들었어요. 하나씩 끝내 보자!');
+  } else if (k === 'task-edit') {
+    const t = S.tasks.find(x => x.id === f.dataset.id); if (!t) { closeSheet(); return; }
+    const title = el.text.value.trim(); if (!title) { toast('할 일을 입력해 주세요.'); return; }
+    const due = isDate(el.due.value) ? el.due.value : null;
+    if (due !== t.due) delete t.carry; // 날짜를 직접 다시 잡으면 이월 표시는 지움
+    Object.assign(t, { title: title.slice(0, 100), due, priority: PRI[el.pri.value] ? el.pri.value : 'normal',
+      detail: el.detail.value.trim().slice(0, 2000), note: el.note.value.trim().slice(0, 2000) });
+    save(); closeSheet(); render(); toast('할 일을 수정했어요.');
   } else if (k === 'add-task') {
     if (!el.text.value.trim()) { toast('할 일을 입력해 주세요.'); return; }
-    if (addTask(el.text.value, el.due.value, newTaskPri, el.pid ? el.pid.value : null)) { newTaskPri = false; closeSheet(); render(); toast('할 일을 추가했어요.'); }
+    if (addTask(el.text.value, el.due.value, el.pri.value, el.pid ? el.pid.value : null)) { closeSheet(); render(); toast('할 일을 추가했어요.'); }
   } else if (k === 'cat') {
     const color = hexOk(el.color.value) ? el.color.value : CAT_COLORS[0];
     const c = f.dataset.id && S.cats.find(x => x.id === f.dataset.id);
