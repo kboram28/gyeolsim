@@ -348,7 +348,7 @@ textarea{font:inherit;font-size:16px;width:100%;padding:11px 12px;border:1px sol
 (() => {
 'use strict';
 const KEY = 'gyeolsim-v1';
-const APP_VERSION = 'v24'; // sw.js의 CACHE 숫자와 같이 올리기
+const APP_VERSION = 'v25'; // sw.js의 CACHE 숫자와 같이 올리기
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
@@ -951,6 +951,8 @@ function renderProjects() {
     <button class="btn primary" data-act="new-proj">첫 프로젝트 만들기</button></section>`}`;
 }
 
+// 프로젝트별로 세부 할 일 추가에서 마지막에 고른 날짜 (추가한 뒤에도 그대로 남김)
+const subDue = {};
 function renderProjectDetail(p) {
   const s = projStats(p), c = pjColor(p);
   const subs = [...s.subs].sort((a, b) => (a.done - b.done) || taskSort(a, b));
@@ -975,8 +977,9 @@ function renderProjectDetail(p) {
     ${subs.filter(t => !t.done).length > 1 ? '<p class="ro-hint">≡를 꾹 누른 채 끌면 순서가 바뀌어요.</p>' : ''}
     ${subs.length ? `<ul class="list">${subs.map(t => taskItem(t, true, true)).join('')}</ul>` : '<div class="empty-txt">아직 세부 할 일이 없어요.</div>'}
     <form data-form="sub-task" data-pid="${esc(p.id)}">
-      <div class="add-row"><input type="text" name="text" placeholder="세부 할 일 추가" maxlength="100" autocomplete="off" enterkeyhint="done"><button class="btn primary">추가</button></div>
-      <div class="add-opts"><div style="flex:1;min-width:0">${datePick('due', '', { min: todayStr(), max: p.end || '', none: true })}</div></div>
+      <div class="add-opts" style="margin-top:10px"><div style="flex:1;min-width:0">${datePick('due', subDue[p.id] && subDue[p.id] >= todayStr() ? subDue[p.id] : '', { min: todayStr(), max: p.end || '', none: true })}</div></div>
+      <div class="add-row" style="margin-top:8px"><input type="text" name="text" placeholder="세부 할 일 추가" maxlength="100" autocomplete="off" enterkeyhint="done"><button class="btn primary">추가</button></div>
+      <p class="ro-hint" style="margin:6px 0 0">날짜를 한 번 고르면 그 날짜로 여러 개를 이어서 추가할 수 있어요.</p>
     </form>
   </section>
   <div class="btn-row"><button class="btn ghost" data-act="edit-proj" data-id="${esc(p.id)}">프로젝트 수정</button><button class="btn danger" data-act="del-proj" data-id="${esc(p.id)}">삭제</button></div>`;
@@ -1683,7 +1686,11 @@ document.addEventListener('click', e => {
     case 'dp-pick': {
       const f = el.closest('.dpf'); f.querySelector('input').value = el.dataset.d;
       if (f.closest('[data-form=add-task]')) newTaskDue = el.dataset.d;
-      dpSet(f, false); break;
+      const sf = f.closest('[data-form=sub-task]');
+      if (sf) subDue[sf.dataset.pid] = el.dataset.d;
+      dpSet(f, false);
+      if (sf) sf.text.focus();
+      break;
     }
     case 'tone': S.settings.tone = el.dataset.v; save(); render(); toast(`${TONE[el.dataset.v].face} ${TONE[el.dataset.v].name}가 맡을게요!`); break;
     case 'new-cat': openCatSheet(null); break;
@@ -1733,7 +1740,8 @@ document.addEventListener('submit', e => {
   const f = e.target, k = f.dataset.form, el = f.elements;
   if (k === 'sub-task') {
     if (addTask(el.text.value, el.due.value, false, f.dataset.pid)) {
-      render(); toast('세부 할 일을 추가했어요.');
+      subDue[f.dataset.pid] = el.due.value;
+      render(); toast(isDate(el.due.value) ? `${fmtMD(el.due.value)}에 추가했어요.` : '세부 할 일을 추가했어요.');
       const i = document.querySelector('[data-form=sub-task] input[name=text]'); if (i) i.focus();
     }
   } else if (k === 'project') {
