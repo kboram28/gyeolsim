@@ -142,22 +142,13 @@ ul.list{list-style:none;margin:0;padding:0}
 .chips{display:flex;gap:6px;overflow-x:auto;margin:0 0 12px;padding-bottom:2px}
 .chip{flex:none;padding:7px 14px;border-radius:999px;background:var(--card);border:1px solid var(--line);font-size:14px;font-weight:600;color:var(--sub)}
 .chip.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
-.sort-row{display:flex;gap:6px;align-items:center;margin:0 0 10px;font-size:13px;color:var(--sub)}
-.chip.sm{padding:4px 11px;font-size:12.5px}
-.sort-row .ro-btn{margin-left:auto}
-.ro-n{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--pri-soft);color:var(--pri);font-weight:800;font-size:14px}
-.ro-b{flex:none;width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--sub);font-size:13px}
-.ro-b:disabled{opacity:.3}
-.drag{flex:none;touch-action:none;cursor:grab;padding:8px 2px 8px 6px;color:var(--sub);font-size:22px;line-height:1;user-select:none;-webkit-user-select:none}
+.drag{flex:none;align-self:stretch;display:grid;place-items:center;width:34px;touch-action:none;cursor:grab;color:var(--sub);font-size:22px;line-height:1;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 .task.dragging{background:var(--pri-soft);border-radius:12px;box-shadow:0 6px 18px #0003}
-.pri-pick{display:flex;gap:6px}
-.pri-pick label{position:relative}
-.pri-pick input{position:absolute;opacity:0;pointer-events:none}
-.pri-pick span{display:flex;align-items:center;min-height:44px;padding:0 14px;border-radius:12px;border:1px solid var(--line);font-weight:600;color:var(--sub);background:var(--bg)}
-.pri-pick input:checked+span{background:var(--fan-soft);border-color:var(--fan);color:var(--fan)}
-.pri-pick input[value=normal]:checked+span{background:var(--pri-soft);border-color:var(--pri);color:var(--pri)}
-.pri-pick input[value=low]:checked+span{background:var(--line);border-color:var(--sub);color:var(--ink)}
-.pri-pick input:focus-visible+span{outline:2px solid var(--pri);outline-offset:2px}
+.ro-hint{font-size:12.5px;color:var(--sub);margin:0 0 8px}
+.hist-day{display:flex;justify-content:space-between;align-items:baseline;margin:0 0 4px}
+.hist-day h2{margin:0}
+.hist-day span{font-size:12.5px;color:var(--sub)}
+.hist-sub{font-size:12.5px;font-weight:700;color:var(--warn);margin:8px 0 0}
 .chip .cnt{margin-left:4px;opacity:.7}
 
 /* calendar */
@@ -357,7 +348,7 @@ textarea{font:inherit;font-size:16px;width:100%;padding:11px 12px;border:1px sol
 (() => {
 'use strict';
 const KEY = 'gyeolsim-v1';
-const APP_VERSION = 'v23'; // sw.js의 CACHE 숫자와 같이 올리기
+const APP_VERSION = 'v24'; // sw.js의 CACHE 숫자와 같이 올리기
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
@@ -565,7 +556,7 @@ function coachPool() {
   const { sit, v } = coachState();
   const t = todayStr(), h = new Date().getHours();
   const active = todoTasks().filter(x => !x.done);
-  const urgent = (a, b) => sortMode() === 'rank' ? taskSort(a, b) : priRank(a) - priRank(b) || (b.carry || 0) - (a.carry || 0) || taskSort(a, b);
+  const urgent = taskSort;
   const dueToday = active.filter(x => x.due === t).sort(urgent).slice(0, 3);
   const carried = active.filter(x => x.carry).sort(urgent).slice(0, 3);
   const soon = active.filter(x => x.due && x.due > t && daysBetween(t, x.due) <= 3).sort(taskSort).slice(0, 2);
@@ -612,7 +603,7 @@ const pushSupported = () => 'serviceWorker' in navigator && 'PushManager' in win
 // 오늘·내일 알림 시각마다, 그날 남은 할 일 이름을 넣은 코치 말을 미리 만들어 둠
 function pushItems() {
   const tone = TONE[S.settings.tone] || TONE.balanced, now = Date.now(), items = [];
-  const urgent = (a, b) => sortMode() === 'rank' ? taskSort(a, b) : priRank(a) - priRank(b) || (b.carry || 0) - (a.carry || 0) || taskSort(a, b);
+  const urgent = taskSort;
   for (let off = 0; off < 2; off++) {
     const day = new Date(); day.setDate(day.getDate() + off);
     const ds = ymd(day);
@@ -848,20 +839,8 @@ function projCard(p) {
 // 할 일 목록에 보일지: 프로젝트 세부 할 일은 마감 당일(또는 오늘 끝낸 것)만
 const inTodo = x => !x.projectId || x.due === todayStr() || (x.done && x.doneAt === todayStr());
 const todoTasks = () => S.tasks.filter(inTodo);
-// 우선순위: 높음(high) · 보통(normal) · 낮음(low)
-const PRI = { high: '높음', normal: '보통', low: '낮음' };
-const priRank = t => t.priority === 'high' ? 0 : t.priority === 'low' ? 2 : 1;
-const priPick = v => `<div class="pri-pick" role="radiogroup" aria-label="우선순위">${Object.keys(PRI).map(k => `<label><input type="radio" name="pri" value="${k}" ${k === (PRI[v] ? v : 'normal') ? 'checked' : ''}><span>${k === 'high' ? '★ ' : ''}${PRI[k]}</span></label>`).join('')}</div>`;
-// 정렬: '내 순서'(기본)는 직접 정한 순위, '우선순위순'은 우선순위 → 마감일, '마감일순'은 마감일 → 우선순위
-const sortMode = () => ['pri', 'due'].includes(S.ui.taskSort) ? S.ui.taskSort : 'rank';
-function taskSort(a, b) {
-  if (sortMode() === 'rank') return (a.rank || 0) - (b.rank || 0);
-  const ad = a.due || '9999-12-31', bd = b.due || '9999-12-31';
-  const byDue = ad === bd ? 0 : ad < bd ? -1 : 1, byPri = priRank(a) - priRank(b);
-  return (sortMode() === 'due' ? byDue || byPri : byPri || byDue) || (a.createdAt || 0) - (b.createdAt || 0);
-}
-// 순서 바꾸는 중인 목록: 'tasks'(할 일 탭) 또는 프로젝트 id
-let reorder = null;
+// 정렬: 내가 정한 순서(rank)대로. ≡를 끌어서 바꿈
+const taskSort = (a, b) => (a.rank || 0) - (b.rank || 0);
 // 화면에 보이는 할 일들의 새 순서대로, 그 할 일들이 갖고 있던 순위 번호를 다시 나눠 줌 (안 보이는 할 일의 자리는 그대로)
 function applyOrder(ids) {
   const ts = ids.map(id => S.tasks.find(x => x.id === id)).filter(Boolean);
@@ -879,22 +858,19 @@ function dueBadge(t) {
   if (n === 0) return `<span class="badge hot">오늘</span>`;
   return `<span class="badge">D-${n}</span>`;
 }
-function taskItem(t, hideProj, ro) {
+// drag: 끝나지 않은 일 오른쪽에 ≡ 손잡이를 붙여 끌어서 순서를 바꿀 수 있게 함
+function taskItem(t, hideProj, drag) {
   const p = !hideProj && t.projectId ? projById(t.projectId) : null;
-  if (ro) return `<li class="task" data-id="${esc(t.id)}"><span class="ro-n">${ro.n}</span>
-    <div class="t-main"><div class="t-title">${t.priority === 'high' ? '<span class="star">★</span>' : ''}${esc(t.title)}</div>
-    <div class="t-meta">${p ? `<span class="badge pj" style="--c:${pjColor(p)}">📁 ${esc(p.title)}</span>` : ''}${dueBadge(t)}</div></div>
-    <button class="ro-b" data-act="ro-move" data-v="-1" aria-label="위로" ${ro.first ? 'disabled' : ''}>▲</button><button class="ro-b" data-act="ro-move" data-v="1" aria-label="아래로" ${ro.last ? 'disabled' : ''}>▼</button>
-    <span class="drag" aria-hidden="true">≡</span></li>`;
-  return `<li class="task ${t.done ? 'done' : ''}">
+  drag = drag && !t.done;
+  return `<li class="task ${t.done ? 'done' : ''}"${drag ? ` data-id="${esc(t.id)}"` : ''}>
     <button class="chk" data-act="toggle" data-id="${esc(t.id)}" aria-label="${t.done ? '완료 취소' : '완료'}">${t.done ? '✓' : ''}</button>
-    <div class="t-main"><div class="t-title" data-act="edit-task" data-id="${esc(t.id)}">${t.priority === 'high' ? '<span class="star">★</span>' : ''}${esc(t.title)}</div>
-    <div class="t-meta">${p ? `<span class="badge pj" style="--c:${pjColor(p)}">📁 ${esc(p.title)}</span>` : ''}${t.priority === 'low' && !t.done ? '<span class="badge">낮음</span>' : ''}${dueBadge(t)}${t.detail ? '<span class="badge">📄 상세</span>' : ''}${t.note ? '<span class="badge">📝 메모</span>' : ''}</div></div>
-    <button class="x" data-act="del-task" data-id="${esc(t.id)}" aria-label="삭제">✕</button></li>`;
+    <div class="t-main"><div class="t-title" data-act="edit-task" data-id="${esc(t.id)}">${esc(t.title)}</div>
+    <div class="t-meta">${p ? `<span class="badge pj" style="--c:${pjColor(p)}">📁 ${esc(p.title)}</span>` : ''}${dueBadge(t)}${t.detail ? '<span class="badge">📄 상세</span>' : ''}${t.note ? '<span class="badge">📝 메모</span>' : ''}</div></div>
+    ${drag ? '<span class="drag" aria-label="끌어서 순서 바꾸기">≡</span>' : ''}<button class="x" data-act="del-task" data-id="${esc(t.id)}" aria-label="삭제">✕</button></li>`;
 }
 function addTask(title, due, pri, projectId) {
   title = title.trim(); if (!title) return false;
-  S.tasks.push({ id: uid(), rank: S.tasks.reduce((m, x) => Math.max(m, x.rank || 0), 0) + 1, title: title.slice(0, 100), due: isDate(due) ? due : null, priority: PRI[pri] ? pri : pri === true ? 'high' : 'normal', done: false, doneAt: null, createdAt: Date.now(), projectId: projectId && projById(projectId) ? projectId : null });
+  S.tasks.push({ id: uid(), rank: S.tasks.reduce((m, x) => Math.max(m, x.rank || 0), 0) + 1, title: title.slice(0, 100), due: isDate(due) ? due : null, priority: 'normal', done: false, doneAt: null, createdAt: Date.now(), projectId: projectId && projById(projectId) ? projectId : null });
   save(); return true;
 }
 // 프로젝트의 마지막 세부 할 일을 끝냈는지 확인 (보너스는 프로젝트당 한 번)
@@ -910,7 +886,6 @@ function toggleTask(id) {
   if (!t.done) {
     const before = doneToday(), wasMet = goalMet(before, goalN());
     let pts = 10;
-    if (t.priority === 'high') pts += 5;
     if (t.due && t.due >= todayStr() && !t.carry) pts += 5;
     t.done = true; t.doneAt = todayStr(); t.pts = pts;
     S.stats.points += pts;
@@ -997,8 +972,8 @@ function renderProjectDetail(p) {
   ${p.memo ? `<section class="card"><h2>메모</h2><p class="memo">${esc(p.memo)}</p></section>` : ''}
   <section class="card">
     <h2>세부 할 일</h2>
-    ${sortRow(p.id, subs.filter(t => !t.done).length)}
-    ${subs.length ? `<ul class="list">${(reorder === p.id ? subs.filter(t => !t.done) : subs).map((t, i, a) => taskItem(t, true, reorder === p.id && { n: i + 1, first: !i, last: i === a.length - 1 })).join('')}</ul>` : '<div class="empty-txt">아직 세부 할 일이 없어요.</div>'}
+    ${subs.filter(t => !t.done).length > 1 ? '<p class="ro-hint">≡를 꾹 누른 채 끌면 순서가 바뀌어요.</p>' : ''}
+    ${subs.length ? `<ul class="list">${subs.map(t => taskItem(t, true, true)).join('')}</ul>` : '<div class="empty-txt">아직 세부 할 일이 없어요.</div>'}
     <form data-form="sub-task" data-pid="${esc(p.id)}">
       <div class="add-row"><input type="text" name="text" placeholder="세부 할 일 추가" maxlength="100" autocomplete="off" enterkeyhint="done"><button class="btn primary">추가</button></div>
       <div class="add-opts"><div style="flex:1;min-width:0">${datePick('due', '', { min: todayStr(), max: p.end || '', none: true })}</div></div>
@@ -1035,9 +1010,9 @@ function openTaskEdit(t) {
       ${p ? `<div class="t-meta" style="margin:-4px 0 10px"><span class="badge pj" style="--c:${pjColor(p)}">📁 ${esc(p.title)}</span></div>` : ''}
       <label class="f">할 일<input type="text" name="text" required maxlength="100" value="${esc(t.title)}" autocomplete="off"></label>
       <div class="f"><span class="muted" style="font-weight:600;font-size:13px">마감일</span>${datePick('due', t.due || '', { max: p && p.end || '', none: true })}</div>
-      <div class="f"><span class="muted" style="font-weight:600;font-size:13px">우선순위</span>${priPick(t.priority)}</div>
       <label class="f">상세 내용<textarea name="detail" maxlength="2000" placeholder="해야 할 범위, 참고 링크, 준비물 등">${esc(t.detail || '')}</textarea></label>
       <label class="f">완료 후 메모<textarea name="note" maxlength="2000" placeholder="결과, 배운 점, 다음에 이어서 할 것">${esc(t.note || '')}</textarea></label>
+      ${t.done ? '' : `<div class="btn-row" style="margin:4px 0 10px"><button type="button" class="btn ghost sm" data-act="task-top" data-id="${esc(t.id)}">⤒ 맨 위로</button></div>`}
       <div class="sheet-btns"><button type="button" class="btn ghost" data-act="close">취소</button><button class="btn primary">저장</button></div>
     </form></div></div>`;
 }
@@ -1262,11 +1237,29 @@ function timePick(value) {
 }
 const timeVal = el => el.th.value ? `${el.th.value}:${el.tm.value || '00'}` : '';
 
-// 정렬 버튼 줄. '내 순서'일 때는 '순서 바꾸기' 버튼도 보임
-function sortRow(key, n) {
-  const on = reorder === key;
-  return `<div class="sort-row">${on ? '<span>▲▼ 버튼이나 ≡를 끌어서 순서를 바꿔요</span>' : `정렬 ${[['rank', '내 순서'], ['pri', '우선순위순'], ['due', '마감일순']].map(([v, l]) => `<button class="chip sm ${sortMode() === v ? 'on' : ''}" data-act="task-sort" data-v="${v}">${l}</button>`).join('')}`}
-    ${sortMode() === 'rank' && n > 1 ? `<button class="chip sm ro-btn ${on ? 'on' : ''}" data-act="reorder" data-k="${esc(key)}">${on ? '완료' : '순서 바꾸기'}</button>` : ''}</div>`;
+// 지난 할 일 기록: 날짜별로 그날 끝낸 일과 그날까지였는데 못 끝낸 일
+let histDays = 14;
+function historyHTML() {
+  const t = todayStr(), days = new Map();
+  const add = (d, k, x) => { if (!isDate(d)) return; if (!days.has(d)) days.set(d, { done: [], miss: [] }); days.get(d)[k].push(x); };
+  for (const x of S.tasks) {
+    if (x.done) add(x.doneAt, 'done', x);
+    else if (x.due) { // 이월된 일은 원래 마감일에 '못 끝냄'으로
+      const d = x.carry ? (() => { const v = parseD(x.due); v.setDate(v.getDate() - x.carry); return ymd(v); })() : x.due;
+      if (d < t) add(d, 'miss', x);
+    }
+  }
+  const keys = [...days.keys()].sort().reverse();
+  if (!keys.length) return '<section class="card"><div class="empty-txt">아직 기록이 없어요. 할 일을 끝내면 날짜별로 여기에 남아요.</div></section>';
+  return keys.slice(0, histDays).map(d => {
+    const g = days.get(d);
+    return `<section class="card">
+      <div class="hist-day"><h2>${d === t ? '오늘' : fmtMD(d)}</h2><span>완료 ${g.done.length}${g.miss.length ? ` · 못 끝냄 ${g.miss.length}` : ''}</span></div>
+      ${g.done.length ? `<ul class="list">${g.done.sort(taskSort).map(x => taskItem(x)).join('')}</ul>` : ''}
+      ${g.miss.length ? `<div class="hist-sub">못 끝낸 일</div><ul class="list">${g.miss.sort(taskSort).map(x => taskItem(x)).join('')}</ul>` : ''}
+    </section>`;
+  }).join('') + (keys.length > histDays ? '<button class="btn ghost" style="width:100%" data-act="hist-more">이전 기록 더 보기</button>' : '')
+    + '<button class="btn danger sm" style="margin-top:12px" data-act="clear-done">완료한 일 모두 지우기</button>';
 }
 function renderTasks() {
   const t = todayStr();
@@ -1274,20 +1267,19 @@ function renderTasks() {
     active:  todoTasks().filter(x => !x.done).sort(taskSort),
     today:   todoTasks().filter(x => !x.done && x.due === t).sort(taskSort),
     carried: todoTasks().filter(x => !x.done && x.carry).sort(taskSort),
-    done:    todoTasks().filter(x => x.done).sort((a, b) => (b.doneAt || '').localeCompare(a.doneAt || ''))
+    done:    S.tasks.filter(x => x.done)
   };
-  const labels = { active: '진행 중', today: '오늘', carried: '이월됨', done: '완료' };
+  const labels = { active: '진행 중', today: '오늘', carried: '이월됨', done: '기록' };
   const list = groups[taskFilter] || groups.active;
-  const empty = { active: '할 일이 없어요. 오른쪽 아래 + 버튼으로 추가해 보세요!', today: '오늘 마감인 할 일이 없어요.', carried: '미뤄진 일이 없어요. 훌륭해요! 👏', done: '아직 완료한 일이 없어요.' };
+  const empty = { active: '할 일이 없어요. 오른쪽 아래 + 버튼으로 추가해 보세요!', today: '오늘 마감인 할 일이 없어요.', carried: '미뤄진 일이 없어요. 훌륭해요! 👏' };
   return `
   <div class="top"><h1>할 일</h1></div>
   ${coachHTML()}
   <div class="chips">${Object.keys(labels).map(k => `<button class="chip ${taskFilter === k ? 'on' : ''}" data-act="filter" data-f="${k}">${labels[k]}<span class="cnt">${groups[k].length}</span></button>`).join('')}</div>
-  ${taskFilter !== 'done' ? sortRow('tasks', list.length) : ''}
+  ${taskFilter === 'done' ? historyHTML() : `${list.length > 1 ? '<p class="ro-hint">≡를 꾹 누른 채 끌면 순서가 바뀌어요. 할 일 이름을 누르면 수정할 수 있어요.</p>' : ''}
   <section class="card">
-    ${list.length ? `<ul class="list">${list.map((x, i) => taskItem(x, false, reorder === 'tasks' && taskFilter !== 'done' && { n: i + 1, first: !i, last: i === list.length - 1 })).join('')}</ul>` : `<div class="empty-txt">${empty[taskFilter]}</div>`}
-    ${taskFilter === 'done' && list.length ? '<button class="btn danger sm" style="margin-top:10px" data-act="clear-done">완료한 일 모두 지우기</button>' : ''}
-  </section>
+    ${list.length ? `<ul class="list">${list.map(x => taskItem(x, false, true)).join('')}</ul>` : `<div class="empty-txt">${empty[taskFilter]}</div>`}
+  </section>`}
   <button class="fab" data-act="new-task" aria-label="할 일 추가">+</button>`;
 }
 
@@ -1299,7 +1291,6 @@ function openTaskSheet() {
       <label class="f">할 일<input type="text" name="text" required maxlength="100" autocomplete="off" enterkeyhint="done"></label>
       <div class="f"><span class="muted" style="font-weight:600;font-size:13px">마감일</span>${datePick('due', newTaskDue, { min: todayStr(), none: true })}</div>
       ${S.projects.length ? `<label class="f">프로젝트<select name="pid" aria-label="프로젝트" style="margin-top:5px"><option value="">프로젝트 없음</option>${[...S.projects].sort(projSort).map(p => `<option value="${esc(p.id)}">📁 ${esc(p.title)}</option>`).join('')}</select></label>` : ''}
-      <div class="f"><span class="muted" style="font-weight:600;font-size:13px">우선순위</span>${priPick('normal')}</div>
       <div class="sheet-btns"><button type="button" class="btn ghost" data-act="close">취소</button><button class="btn primary">추가</button></div>
     </form></div></div>`;
   setTimeout(() => { const i = $('#sheet input[name=text]'); if (i) i.focus(); }, 50);
@@ -1574,9 +1565,9 @@ document.addEventListener('click', e => {
   const a = el.dataset.act;
   if (a === 'close-bg' && e.target !== el) return;
   switch (a) {
-    case 'tab': tab = el.dataset.tab; nudge = 0; openProject = null; reorder = null; newTaskDue = todayStr(); render(); window.scrollTo(0, 0); break;
+    case 'tab': tab = el.dataset.tab; nudge = 0; openProject = null; newTaskDue = todayStr(); render(); window.scrollTo(0, 0); break;
     case 'open-proj': tab = 'proj'; openProject = el.dataset.id; render(); window.scrollTo(0, 0); break;
-    case 'close-proj': openProject = null; reorder = null; render(); window.scrollTo(0, 0); break;
+    case 'close-proj': openProject = null; render(); window.scrollTo(0, 0); break;
     case 'new-proj': openProjectSheet(null); break;
     case 'new-task': openTaskSheet(); break;
     case 'push-on': enablePush(); break;
@@ -1612,7 +1603,7 @@ document.addEventListener('click', e => {
       break;
     }
     case 'clear-done':
-      if (confirm('완료한 할 일을 모두 지울까요? (점수는 그대로 유지돼요)')) { S.tasks = S.tasks.filter(x => !x.done); save(); render(); }
+      if (confirm('완료한 할 일을 모두 지울까요? 기록에서도 사라져요. (점수는 그대로 유지돼요)')) { S.tasks = S.tasks.filter(x => !x.done); save(); render(); }
       break;
     case 'del-event': {
       const ev = S.events.find(x => x.id === el.dataset.id);
@@ -1664,15 +1655,14 @@ document.addEventListener('click', e => {
     }
     case 'accent': S.fan.theme.accent = el.dataset.v === ACCENTS[0] ? '' : el.dataset.v; save(); render(); break;
     case 'hide-install': S.ui.installHidden = true; save(); render(); break;
-    case 'task-sort': S.ui.taskSort = ['pri', 'due'].includes(el.dataset.v) ? el.dataset.v : 'rank'; reorder = null; save(); render(); break;
-    case 'reorder': reorder = reorder === el.dataset.k ? null : el.dataset.k; render(); break;
-    case 'ro-move': {
-      const ids = roIds(el), i = ids.indexOf(el.closest('li').dataset.id), j = i + +el.dataset.v;
-      if (i < 0 || j < 0 || j >= ids.length) break;
-      [ids[i], ids[j]] = [ids[j], ids[i]]; applyOrder(ids); render();
+    case 'task-top': {
+      const t = S.tasks.find(x => x.id === el.dataset.id); if (!t) break;
+      t.rank = S.tasks.reduce((m, x) => Math.min(m, x.rank || 0), Infinity) - 1;
+      save(); closeSheet(); render(); toast('맨 위로 올렸어요.');
       break;
     }
-    case 'filter': taskFilter = el.dataset.f; render(); break;
+    case 'hist-more': histDays += 14; render(); break;
+    case 'filter': taskFilter = el.dataset.f; histDays = 14; render(); break;
     case 'dp-toggle': {
       const f = el.closest('.dpf'), open = !f.querySelector('.dp');
       if (open) { f.dataset.cur = (f.querySelector('input').value || todayStr()).slice(0, 7); f.dataset.mode = 'day'; }
@@ -1767,12 +1757,12 @@ document.addEventListener('submit', e => {
     const title = el.text.value.trim(); if (!title) { toast('할 일을 입력해 주세요.'); return; }
     const due = isDate(el.due.value) ? el.due.value : null;
     if (due !== t.due) delete t.carry; // 날짜를 직접 다시 잡으면 이월 표시는 지움
-    Object.assign(t, { title: title.slice(0, 100), due, priority: PRI[el.pri.value] ? el.pri.value : 'normal',
+    Object.assign(t, { title: title.slice(0, 100), due,
       detail: el.detail.value.trim().slice(0, 2000), note: el.note.value.trim().slice(0, 2000) });
     save(); closeSheet(); render(); toast('할 일을 수정했어요.');
   } else if (k === 'add-task') {
     if (!el.text.value.trim()) { toast('할 일을 입력해 주세요.'); return; }
-    if (addTask(el.text.value, el.due.value, el.pri.value, el.pid ? el.pid.value : null)) { closeSheet(); render(); toast('할 일을 추가했어요.'); }
+    if (addTask(el.text.value, el.due.value, false, el.pid ? el.pid.value : null)) { closeSheet(); render(); toast('할 일을 추가했어요.'); }
   } else if (k === 'cat') {
     const color = hexOk(el.color.value) ? el.color.value : CAT_COLORS[0];
     const c = f.dataset.id && S.cats.find(x => x.id === f.dataset.id);
