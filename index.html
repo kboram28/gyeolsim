@@ -103,10 +103,11 @@ h2{font-size:17px;font-weight:700;margin:0 0 10px;letter-spacing:-.025em}
 .tk-num{font-size:20px;font-weight:800;line-height:1.15;white-space:nowrap;color:color-mix(in srgb,var(--c) 85%,var(--ink));font-variant-numeric:tabular-nums}
 .tk-date{font-size:12px;font-weight:700;white-space:nowrap;color:color-mix(in srgb,var(--c) 55%,var(--sub))}
 .tk-body{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:1px;padding:10px 14px 10px 16px;border-left:2px dashed color-mix(in srgb,var(--c) 30%,var(--line))}
-.tk-head{display:flex;align-items:baseline;gap:6px;min-width:0;font-size:14.5px;line-height:1.4}
-.tk-cat{flex:none;font-size:14.5px;font-weight:800;color:color-mix(in srgb,var(--c) 80%,var(--ink))}
-.tk-title{min-width:0;font-size:14.5px;font-weight:700;color:color-mix(in srgb,var(--ink) 68%,var(--card));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.tk-title::before{content:"·";margin-right:6px;color:var(--sub);opacity:.6}
+.tk-cat{font-size:13px;font-weight:800;line-height:1.4;color:color-mix(in srgb,var(--c) 80%,var(--ink))}
+/* 둘째 줄: 일정 내용 + 옆에 시간(종일이면 안 씀) */
+.tk-line{display:flex;align-items:baseline;gap:10px;min-width:0;line-height:1.45}
+.tk-title{min-width:0;font-size:15px;font-weight:700;color:color-mix(in srgb,var(--ink) 78%,var(--card));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tk-time{flex:none;font-size:13px;font-weight:600;color:var(--sub)}
 .tk-meta{font-size:12.5px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tk.empty .tk-num{opacity:.5}
 
@@ -535,7 +536,7 @@ label.f input,label.f textarea{color:var(--ink);font-weight:400}
 (() => {
 'use strict';
 const KEY = 'gyeolsim-v1';
-const APP_VERSION = 'v37'; // sw.js의 CACHE 숫자와 같이 올리기
+const APP_VERSION = 'v38'; // sw.js의 CACHE 숫자와 같이 올리기
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
@@ -1459,10 +1460,9 @@ function ddayHTML() {
     if (!nx) return `<div class="tk empty" style="--c:${color}"><div class="tk-stub"><div class="tk-num">D-?</div></div>
       <div class="tk-body"><div class="tk-cat">${label}</div><div class="tk-meta">${emptyTxt}</div></div></div>`;
     const n = daysBetween(todayStr(), nx.d), dt = parseD(nx.d);
-    const meta = [nx.e.time ? timeLabel(nx.e.time) : '종일', nx.e.place ? '📍 ' + esc(nx.e.place) : ''].filter(Boolean).join(' · ');
     return `<button class="tk" style="--c:${color}" data-act="day" data-d="${nx.d}">
       <div class="tk-stub"><div class="tk-num">${n === 0 ? 'D-DAY' : 'D-' + n}</div><div class="tk-date">${dt.getMonth() + 1}/${dt.getDate()} ${WD[dt.getDay()]}</div></div>
-      <div class="tk-body"><div class="tk-head"><span class="tk-cat">${label}</span><span class="tk-title">${esc(nx.e.title)}</span></div><div class="tk-meta">${meta}</div></div></button>`;
+      <div class="tk-body"><div class="tk-cat">${label}</div><div class="tk-line"><span class="tk-title">${esc(nx.e.title)}</span>${nx.e.time ? `<span class="tk-time">${timeLabel(nx.e.time)}</span>` : ""}</div></div></button>`;
   };
   return `<div class="card dd-wrap">
     ${ticket(true, `🎤 ${esc(singerName())}`, `생일·공연 같은 ${esc(singerName())} 일정을 등록해 보세요.`)}
