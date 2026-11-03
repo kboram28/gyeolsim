@@ -103,9 +103,10 @@ h2{font-size:17px;font-weight:700;margin:0 0 10px;letter-spacing:-.025em}
 .tk-num{font-size:20px;font-weight:800;line-height:1.15;white-space:nowrap;color:color-mix(in srgb,var(--c) 85%,var(--ink));font-variant-numeric:tabular-nums}
 .tk-date{font-size:12px;font-weight:700;white-space:nowrap;color:color-mix(in srgb,var(--c) 55%,var(--sub))}
 .tk-body{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:1px;padding:10px 14px 10px 16px;border-left:2px dashed color-mix(in srgb,var(--c) 30%,var(--line))}
-.tk-head{display:flex;align-items:baseline;gap:7px;min-width:0}
-.tk-cat{flex:none;font-size:12px;font-weight:800;color:color-mix(in srgb,var(--c) 80%,var(--ink))}
-.tk-title{min-width:0;font-size:15.5px;font-weight:800;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tk-head{display:flex;align-items:baseline;gap:6px;min-width:0;font-size:14.5px;line-height:1.4}
+.tk-cat{flex:none;font-size:14.5px;font-weight:800;color:color-mix(in srgb,var(--c) 80%,var(--ink))}
+.tk-title{min-width:0;font-size:14.5px;font-weight:700;color:color-mix(in srgb,var(--ink) 68%,var(--card));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tk-title::before{content:"·";margin-right:6px;color:var(--sub);opacity:.6}
 .tk-meta{font-size:12.5px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tk.empty .tk-num{opacity:.5}
 
@@ -452,10 +453,19 @@ textarea{font:inherit;font-size:16px;letter-spacing:inherit;width:100%;padding:1
 .prof-row:last-of-type{border-bottom:0}
 .prof-row span:first-child{color:var(--sub)}
 .prof-row b{text-align:right}
-.diary{padding:10px 0;border-bottom:1px solid var(--line);display:flex;gap:10px}
-.diary:last-child{border-bottom:0}
-.diary img{flex:none;width:64px;height:64px;object-fit:cover;border-radius:10px}
-.diary .memo{font-size:13px;color:var(--sub);margin-top:2px}
+/* 덕질 기록: 왼쪽 네모(사진 또는 종류 이모지) + 제목 / 날짜·종류·장소 / 메모 한 줄 */
+.dy{display:flex;align-items:center;gap:13px;width:100%;padding:12px 0;border-bottom:1px solid var(--line);text-align:left}
+.dy:last-child{border-bottom:0}
+.dy-th{flex:none;width:60px;height:60px;border-radius:16px;overflow:hidden;display:grid;place-items:center;font-size:27px;background:var(--fan-soft)}
+.dy-th img{width:100%;height:100%;object-fit:cover;display:block}
+.dy-b{flex:1;min-width:0}
+.dy-t,.dy-m,.dy-memo{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dy-t{font-size:15.5px;font-weight:700;line-height:1.4}
+.dy-m{font-size:12.5px;color:var(--sub);margin-top:1px}
+.dy-m b{color:color-mix(in srgb,var(--fan) 85%,var(--ink));font-weight:800}
+.dy-memo{font-size:13px;color:color-mix(in srgb,var(--ink) 62%,var(--card));margin-top:2px}
+.dy-go{flex:none;color:var(--sub);opacity:.5;font-size:20px}
+.dy-prev{display:block;width:100%;max-height:220px;object-fit:cover;border-radius:16px;margin:2px 0 8px}
 .acc-pick{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:4px 0 14px}
 .acc-pick button{width:34px;height:34px;border-radius:50%;background:var(--c);box-shadow:0 0 0 1px var(--line);border:3px solid transparent}
 .acc-pick button.on{border-color:var(--card);box-shadow:0 0 0 2px var(--c)}
@@ -525,7 +535,7 @@ label.f input,label.f textarea{color:var(--ink);font-weight:400}
 (() => {
 'use strict';
 const KEY = 'gyeolsim-v1';
-const APP_VERSION = 'v34'; // sw.js의 CACHE 숫자와 같이 올리기
+const APP_VERSION = 'v35'; // sw.js의 CACHE 숫자와 같이 올리기
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
@@ -1718,11 +1728,13 @@ function renderFan() {
   ${S.fan.memories.length ? `<section class="card"><h2>📼 뽑은 추억 영상</h2><div class="vrow" style="margin-top:0">${[...S.fan.memories].reverse().slice(0, 20).map(m => `<button class="vth" data-act="play" data-id="${esc(m.id)}"><img src="${ytThumb(m.id)}" alt="" loading="lazy"><div>${esc(m.t || '')}</div></button>`).join('')}</div></section>` : ''}
   <section class="card">
     <div class="sec-head"><h2>📒 덕질 기록장</h2><button class="btn ghost sm" data-act="new-diary">+ 기록</button></div>
-    ${diary.length ? diary.map(x => `<div class="diary">${x.photo ? `<img src="${esc(x.photo)}" alt="">` : ''}
-      <div class="t-main"><div class="t-title"><b>${esc(x.title)}</b></div>
-      <div class="t-meta"><span class="badge fan">${DK[x.kind] || DK.etc}</span><span class="badge">${x.date.replaceAll('-', '.')}</span>${x.place ? `<span class="badge">📍 ${esc(x.place)}</span>` : ''}</div>
-      ${x.memo ? `<p class="memo">${esc(x.memo)}</p>` : ''}</div>
-      <button class="x" data-act="del-diary" data-id="${esc(x.id)}" aria-label="삭제">✕</button></div>`).join('')
+    ${diary.length ? diary.map(x => { const [em, ...nm] = (DK[x.kind] || DK.etc).split(' '), dt = parseD(x.date);
+      return `<button class="dy" data-act="edit-diary" data-id="${esc(x.id)}">
+      <span class="dy-th">${x.photo ? `<img src="${esc(x.photo)}" alt="">` : em}</span>
+      <span class="dy-b"><div class="dy-t">${esc(x.title)}</div>
+        <div class="dy-m"><b>${nm.join(' ')}</b> · ${x.date.slice(0, 4) !== t.slice(0, 4) ? dt.getFullYear() + '. ' : ''}${dt.getMonth() + 1}. ${dt.getDate()} (${WD[dt.getDay()]})${x.place ? ` · 📍 ${esc(x.place)}` : ''}</div>
+        ${x.memo ? `<div class="dy-memo">${esc(x.memo.split('\n')[0])}</div>` : ''}</span>
+      <span class="dy-go" aria-hidden="true">›</span></button>`; }).join('')
       : '<div class="empty-txt">공연, 앨범, 팬사인회처럼 덕질한 날을 남겨 보세요.</div>'}
   </section>`;
 }
@@ -1810,17 +1822,23 @@ function openProfileSheet() {
     <div class="sheet-btns"><button type="button" class="btn ghost" data-act="close">취소</button><button class="btn primary">저장</button></div></form>`, '프로필');
 }
 let diaryPhoto = null;
-function openDiarySheet() {
-  diaryPhoto = null;
-  sheet(`<form data-form="diary"><h3>덕질 기록</h3>
-    <label class="f">제목<input type="text" name="text" required maxlength="60" autocomplete="off"></label>
-    <div class="f"><span class="muted" style="font-weight:600;font-size:13px">날짜</span>${datePick('date', todayStr())}</div>
-    <div class="f"><span class="muted" style="font-weight:600;font-size:13px">종류</span><select name="kind" style="margin-top:5px">${DIARY_KINDS.map(([k, l]) => `<option value="${k}">${l}</option>`).join('')}</select></div>
-    <label class="f">장소 (선택)<input type="text" name="place" maxlength="60" autocomplete="off"></label>
-    <label class="f">메모 (선택)<textarea name="memo" maxlength="1000"></textarea></label>
-    <div class="f"><label class="btn ghost sm file-btn" id="diary-photo-btn">📷 사진 넣기 (선택)<input type="file" accept="image/*" data-file="diary-photo"></label></div>
+// x가 있으면 수정 (사진 바꾸기·빼기, 삭제)
+function openDiarySheet(x) {
+  diaryPhoto = x ? x.photo || null : null;
+  const lbl = t => `<span class="muted" style="font-weight:600;font-size:13px">${t}</span>`;
+  sheet(`<form data-form="diary"${x ? ` data-id="${esc(x.id)}"` : ''}><h3>${x ? '덕질 기록 수정' : '덕질 기록'}</h3>
+    <label class="f">제목<input type="text" name="text" required maxlength="60" autocomplete="off" value="${x ? esc(x.title) : ''}"></label>
+    <div class="f">${lbl('날짜')}${datePick('date', x ? x.date : todayStr())}</div>
+    <div class="f">${lbl('종류')}<select name="kind" style="margin-top:5px">${DIARY_KINDS.map(([k, l]) => `<option value="${k}" ${x && x.kind === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+    <label class="f">장소 (선택)<input type="text" name="place" maxlength="60" autocomplete="off" value="${x ? esc(x.place || '') : ''}"></label>
+    <label class="f">메모 (선택)<textarea name="memo" maxlength="1000">${x ? esc(x.memo || '') : ''}</textarea></label>
+    <div class="f" id="diary-photo">${diaryPhotoHTML()}</div>
+    ${x ? `<div class="btn-row" style="margin:4px 0 14px"><button type="button" class="btn danger sm" data-act="del-diary" data-id="${esc(x.id)}">삭제</button></div>` : ''}
     <div class="sheet-btns"><button type="button" class="btn ghost" data-act="close">취소</button><button class="btn primary">저장</button></div></form>`, '덕질 기록');
 }
+const diaryPhotoHTML = () => `${diaryPhoto ? `<img class="dy-prev" src="${esc(diaryPhoto)}" alt="">` : ''}
+  <div class="btn-row"><label class="btn ghost sm file-btn">📷 ${diaryPhoto ? '사진 바꾸기' : '사진 넣기 (선택)'}<input type="file" accept="image/*" data-file="diary-photo"></label>
+  ${diaryPhoto ? '<button type="button" class="btn ghost sm" data-act="diary-photo-del">사진 빼기</button>' : ''}</div>`;
 // 사진을 줄여서 dataURL로 (폰 저장 공간 아끼기)
 function shrinkImage(file, max, q, done) {
   const reader = new FileReader();
@@ -2101,9 +2119,11 @@ document.addEventListener('click', e => {
     case 'binder': binderFilter = el.dataset.f; render(); break;
     case 'edit-profile': openProfileSheet(); break;
     case 'new-diary': openDiarySheet(); break;
+    case 'edit-diary': { const x = S.fan.diary.find(d => d.id === el.dataset.id); if (x) openDiarySheet(x); break; }
+    case 'diary-photo-del': { diaryPhoto = null; const b = $('#diary-photo'); if (b) b.innerHTML = diaryPhotoHTML(); break; }
     case 'del-diary': {
       const x = S.fan.diary.find(d => d.id === el.dataset.id);
-      if (x && confirm(`'${x.title}' 기록을 지울까요?`)) { S.fan.diary = S.fan.diary.filter(d => d.id !== x.id); save(); render(); }
+      if (x && confirm(`'${x.title}' 기록을 지울까요?`)) { S.fan.diary = S.fan.diary.filter(d => d.id !== x.id); save(); closeSheet(); render(); toast('기록을 지웠어요.'); }
       break;
     }
     case 'accent': S.fan.theme.accent = el.dataset.v === ACCENTS[0] ? '' : el.dataset.v; save(); render(); break;
@@ -2279,9 +2299,11 @@ document.addEventListener('submit', e => {
   } else if (k === 'diary') {
     const title = el.text.value.trim(), date = el.date.value;
     if (!title || !isDate(date)) { toast('제목과 날짜를 입력해 주세요.'); return; }
-    S.fan.diary.push({ id: uid(), date, title: title.slice(0, 60), kind: DIARY_KINDS.some(([x]) => x === el.kind.value) ? el.kind.value : 'etc',
-      place: el.place.value.trim().slice(0, 60), memo: el.memo.value.trim().slice(0, 1000), photo: diaryPhoto });
-    diaryPhoto = null; save(); closeSheet(); render(); toast('덕질 기록을 남겼어요 🧡');
+    const val = { date, title: title.slice(0, 60), kind: DIARY_KINDS.some(([x]) => x === el.kind.value) ? el.kind.value : 'etc',
+      place: el.place.value.trim().slice(0, 60), memo: el.memo.value.trim().slice(0, 1000), photo: diaryPhoto };
+    const old = f.dataset.id && S.fan.diary.find(d => d.id === f.dataset.id);
+    if (old) Object.assign(old, val); else S.fan.diary.push({ id: uid(), ...val });
+    diaryPhoto = null; save(); closeSheet(); render(); toast(old ? '기록을 고쳤어요.' : '덕질 기록을 남겼어요 🧡');
   } else if (k === 'accent') {
     const c = normHex(el.hex.value) || normHex(el.pick.value);
     if (!c) { toast('색상 코드를 확인해 주세요. 예: #ff7a59'); return; }
@@ -2328,7 +2350,7 @@ document.addEventListener('change', e => {
   if (el.dataset.set) { S.settings[el.dataset.set] = el.value.trim(); save(); return; }
   if (el.dataset.file === 'photo' && el.files[0]) { setPhoto(el.files[0]); return; }
   if (el.dataset.file === 'diary-photo' && el.files[0]) {
-    shrinkImage(el.files[0], 720, 0.7, url => { diaryPhoto = url; const b = $('#diary-photo-btn'); if (b) b.firstChild.textContent = '📷 사진 넣음 ✓ (바꾸기)'; });
+    shrinkImage(el.files[0], 720, 0.7, url => { diaryPhoto = url; const b = $('#diary-photo'); if (b) b.innerHTML = diaryPhotoHTML(); });
     return;
   }
   if (el.dataset.file === 'import' && el.files[0]) { importData(el.files[0]); el.value = ''; }
