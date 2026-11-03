@@ -94,12 +94,21 @@ h2{font-size:17px;font-weight:700;margin:0 0 10px;letter-spacing:-.025em}
 .fab:active{transform:scale(.94)}
 
 /* dday */
-.dd-wrap{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.dd-wrap{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;margin-bottom:14px}
 .dd-wrap .card{margin-bottom:0}
-.dday{min-width:0;padding:16px;background:color-mix(in srgb,var(--fan) 8%,var(--card))}
-.dd-label{font-size:12px;font-weight:700;color:var(--fan);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.dd-num{font-weight:800;font-size:26px;color:var(--fan);white-space:nowrap;margin-top:2px;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
-.dd-title{font-weight:700;font-size:15px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-all}
+/* 왼쪽 칸(폭 고정, 가운데 정렬): D-day·날짜 / 점선 / 오른쪽 칸(왼쪽 정렬): 분류·제목·시간 */
+.tk{--c:var(--pri);--stub:98px;position:relative;display:flex;min-width:0;align-items:stretch;width:100%;padding:0;text-align:left;overflow:visible}
+.tk::before,.tk::after{content:"";position:absolute;left:var(--stub);width:14px;height:14px;border-radius:50%;background:var(--bg);transform:translateX(-50%);z-index:1}
+.tk::before{top:-7px}.tk::after{bottom:-7px}
+.tk-stub{flex:none;width:var(--stub);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:16px 6px;border-radius:var(--r-card) 0 0 var(--r-card);background:color-mix(in srgb,var(--c) 15%,var(--card))}
+.tk-num{font-size:24px;font-weight:800;line-height:1.1;white-space:nowrap;color:color-mix(in srgb,var(--c) 82%,var(--ink));font-variant-numeric:tabular-nums}
+.tk-date{font-size:12.5px;font-weight:700;white-space:nowrap;color:color-mix(in srgb,var(--c) 55%,var(--sub))}
+.tk-body{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:2px;padding:15px 16px 15px 20px;border-left:2px dashed color-mix(in srgb,var(--c) 30%,var(--line))}
+.tk-cat{font-size:12.5px;font-weight:800;color:color-mix(in srgb,var(--c) 80%,var(--ink))}
+.tk-title{font-size:16.5px;font-weight:800;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tk-meta{font-size:13px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tk.empty .tk-num{font-size:20px;opacity:.5}
+.tk.empty .tk-meta{white-space:normal}
 
 /* 섹션 제목(카드 밖) + 목록 카드 */
 .sec-title{display:flex;justify-content:space-between;align-items:center;margin:28px 4px 10px}
@@ -487,7 +496,6 @@ label.f input,label.f textarea{color:var(--ink);font-weight:400}
 .ring span{font-weight:800}
 .rt-chip{font-size:14.5px;padding:9px 14px}
 .bubble p{font-size:15.5px;font-weight:700;line-height:1.5}
-.dd-num{font-weight:800}
 .card{border-radius:var(--r-card)}
 .fab{border-radius:50%}
 /* 일정 줄: 누르면 수정 */
@@ -517,7 +525,7 @@ label.f input,label.f textarea{color:var(--ink);font-weight:400}
 (() => {
 'use strict';
 const KEY = 'gyeolsim-v1';
-const APP_VERSION = 'v32'; // sw.js의 CACHE 숫자와 같이 올리기
+const APP_VERSION = 'v33'; // sw.js의 CACHE 숫자와 같이 올리기
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
@@ -881,7 +889,7 @@ const newVideos = () => {
 // 오늘 목표를 한 번이라도 채웠으면 보상이 열림 (나중에 할 일이 늘어도 다시 잠기지 않음)
 const rewardOpen = () => S.stats.lastGoalDate === todayStr() || goalMet(doneToday(), goalN());
 const dayRec = () => S.fan.days[todayStr()] || (S.fan.days[todayStr()] = {});
-// 오늘이 김결 기념일이면 이름을 돌려줌: 프로필의 생일·데뷔일, 또는 ⭐ 카테고리 일정
+// 오늘이 김결 기념일이면 이름을 돌려줌: 프로필의 생일·데뷔일, 또는 가수 카테고리 일정
 function anniversary(ds = todayStr()) {
   const pf = S.fan.profile, md = ds.slice(5);
   if (isDate(pf.birthday) && pf.birthday.slice(5) === md) return '🎂 생일 기념';
@@ -890,7 +898,7 @@ function anniversary(ds = todayStr()) {
     return n > 0 ? `🎉 데뷔 ${n}주년` : '🎉 데뷔일';
   }
   const ev = eventsOn(ds).find(e => e.type === 'fan');
-  return ev ? `⭐ ${ev.title.slice(0, 14)}` : '';
+  return ev ? `💜 ${ev.title.slice(0, 14)}` : '';
 }
 // 오늘의 포토카드: 일반 70% · 레어 25% · 슈퍼레어 5%, 안 가진 카드 먼저. 기념일엔 레어 이상 + 한정 표시
 function drawCard() {
@@ -1007,7 +1015,7 @@ function nextEvent(fan) {
 }
 
 const catById = id => S.cats.find(c => c.id === id) || S.cats.find(c => c.id === 'me');
-const catName = c => c.id === 'fan' ? `⭐ ${singerName()}` : c.name;
+const catName = c => c.id === 'fan' ? singerName() : c.name;
 
 /* ---------- 프로젝트 ---------- */
 const PJ_COLORS = ['#7c5cff', '#3d7ef5', '#2fa36b', '#e09a00', '#e5484d', '#d6409f'];
@@ -1433,20 +1441,20 @@ function coachHTML() {
 
 // 왼쪽: 가수 일정, 오른쪽: 내 일정(가수 일정이 아닌 모든 카테고리)
 function ddayHTML() {
-  const half = (fan, label, emptyTxt) => {
+  const ticket = (fan, label, emptyTxt) => {
     const nx = nextEvent(fan);
     const color = nx ? catById(nx.e.type).color : catById(fan ? 'fan' : 'me').color;
-    if (!nx) return `<div class="card dday" style="--fan:${color}"><div class="dd-label">${label}</div><div class="muted" style="margin-top:4px">${emptyTxt}</div></div>`;
-    const n = daysBetween(todayStr(), nx.d);
-    return `<div class="card dday" style="--fan:${color}"><div class="dd-label">${label}</div>
-      <div class="dd-num">${n === 0 ? 'D-DAY' : 'D-' + n}</div>
-      <div class="dd-title">${esc(nx.e.title)}</div>
-      <div class="muted">${fmtShort(nx.d)} (${WD[parseD(nx.d).getDay()]})${nx.e.time ? ' · ' + esc(nx.e.time) : ''}</div>
-      ${nx.e.place ? `<div class="muted" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">📍 ${esc(nx.e.place)}</div>` : ''}</div>`;
+    if (!nx) return `<div class="card tk empty" style="--c:${color}"><div class="tk-stub"><div class="tk-num">D-?</div></div>
+      <div class="tk-body"><div class="tk-cat">${label}</div><div class="tk-meta">${emptyTxt}</div></div></div>`;
+    const n = daysBetween(todayStr(), nx.d), dt = parseD(nx.d);
+    const meta = [nx.e.time ? timeLabel(nx.e.time) : '종일', nx.e.place ? '📍 ' + esc(nx.e.place) : ''].filter(Boolean).join(' · ');
+    return `<button class="card tk" style="--c:${color}" data-act="day" data-d="${nx.d}">
+      <div class="tk-stub"><div class="tk-num">${n === 0 ? 'D-DAY' : 'D-' + n}</div><div class="tk-date">${dt.getMonth() + 1}/${dt.getDate()} ${WD[dt.getDay()]}</div></div>
+      <div class="tk-body"><div class="tk-cat">${label}</div><div class="tk-title">${esc(nx.e.title)}</div><div class="tk-meta">${meta}</div></div></button>`;
   };
   return `<div class="dd-wrap">
-    ${half(true, `⭐ ${esc(singerName())}`, `생일·공연 같은 ${esc(singerName())} 일정을 등록해 보세요.`)}
-    ${half(false, '📌 내 일정', '다가오는 내 일정이 없어요.')}
+    ${ticket(true, esc(singerName()), `생일·공연 같은 ${esc(singerName())} 일정을 등록해 보세요.`)}
+    ${ticket(false, '내 일정', '다가오는 내 일정이 없어요.')}
   </div>`;
 }
 
@@ -1687,7 +1695,7 @@ function renderFan() {
   const diary = [...S.fan.diary].sort((a, b) => b.date.localeCompare(a.date));
   const DK = { show: '🎤 공연', album: '💿 앨범', sign: '✍️ 팬사인회', goods: '🛍️ 굿즈', tv: '📺 방송', etc: '💜 기타' };
   return `
-  ${bg ? `<div class="banner">${bg}<div class="ov"><h1>⭐ ${singer}</h1></div></div>` : `<div class="top"><h1>⭐ ${singer}</h1></div>`}
+  ${bg ? `<div class="banner">${bg}<div class="ov"><h1>${singer}</h1></div></div>` : `<div class="top"><h1>${singer}</h1></div>`}
   <section class="card">
     <div class="sec-head"><h2>프로필</h2><button class="btn ghost sm" data-act="edit-profile">수정</button></div>
     ${sd ? `<div class="prof-big">${singer}${josa(singerName(), '을', '를')} 좋아한 지 ${sd}일째</div><p class="muted" style="margin:2px 0 8px">${fmtMD(pf.since)} ${pf.since.slice(0, 4)}년부터</p>`
@@ -1795,7 +1803,7 @@ function openProfileSheet() {
     <label class="f">팬덤명<input type="text" name="fandom" maxlength="20" value="${esc(pf.fandom)}" autocomplete="off"></label>
     <label class="f">소속사<input type="text" name="agency" maxlength="30" value="${esc(pf.agency)}" autocomplete="off"></label>
     <label class="f">최애곡<input type="text" name="fav" maxlength="40" value="${esc(pf.fav)}" autocomplete="off"></label>
-    <p class="muted" style="margin:0 0 12px">⭐ ${esc(singerName())} 카테고리로 등록한 일정(콘서트 등) 날에도 한정 카드가 나와요.</p>
+    <p class="muted" style="margin:0 0 12px">${esc(singerName())} 카테고리로 등록한 일정(콘서트 등) 날에도 한정 카드가 나와요.</p>
     <div class="sheet-btns"><button type="button" class="btn ghost" data-act="close">취소</button><button class="btn primary">저장</button></div></form>`, '프로필');
 }
 let diaryPhoto = null;
@@ -1927,7 +1935,7 @@ function openCatSheet(c) {
   $('#sheet').innerHTML = `<div class="sheet-bg" data-act="close-bg"><div class="sheet" role="dialog" aria-label="${isNew ? '새 카테고리' : '카테고리 수정'}">
     <form data-form="cat" data-id="${c ? esc(c.id) : ''}">
       <h3>${isNew ? '새 카테고리' : '카테고리 수정'}</h3>
-      ${c && c.id === 'fan' ? `<p class="muted" style="margin:0 0 12px">⭐ ${esc(singerName())} 일정은 이름이 가수 이름으로 정해져 있어요. 색상만 바꿀 수 있어요.</p>`
+      ${c && c.id === 'fan' ? `<p class="muted" style="margin:0 0 12px">${esc(singerName())} 일정은 이름이 가수 이름으로 정해져 있어요. 색상만 바꿀 수 있어요.</p>`
         : `<label class="f">이름<input type="text" name="text" required maxlength="12" value="${c ? esc(c.name) : ''}" placeholder="예: 학교, 알바, 운동" autocomplete="off"></label>`}
       <div class="f muted" style="font-weight:600;font-size:13px">색상</div>
       <div class="color-pick" style="flex-wrap:wrap">${CAT_COLORS.map(cl => `<label><input type="radio" name="color" value="${cl}" ${cl === color ? 'checked' : ''}><span style="--c:${cl}"></span></label>`).join('')}</div>
@@ -1945,7 +1953,7 @@ function toast(msg) {
   clearTimeout(toastTimer); toastTimer = setTimeout(() => el.remove(), 2600);
 }
 function burst() {
-  const emo = ['💜', '🎵', '⭐', '🎉', '✨', '🎧'];
+  const emo = ['💜', '🎵', '🎉', '✨', '🎧'];
   for (let i = 0; i < 18; i++) {
     const s = document.createElement('span'); s.className = 'burst'; s.textContent = emo[i % emo.length];
     s.style.left = (5 + Math.random() * 90) + 'vw';
