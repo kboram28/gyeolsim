@@ -55,7 +55,7 @@ h2{font-size:17px;font-weight:700;margin:0 0 10px;letter-spacing:-.025em}
 /* hero */
 .hero{padding:0;overflow:hidden}
 .hero-photo{display:block;width:100%;aspect-ratio:16/9;object-fit:cover}
-.coach{display:flex;gap:12px;align-items:flex-start;padding:16px}
+.coach{display:flex;gap:12px;align-items:flex-start;padding:16px 16px 14px}
 .coach-face{flex:none;width:46px;height:46px;border-radius:50%;background:var(--pri-soft);display:grid;place-items:center;font-size:25px}
 .bubble{flex:1;text-align:left;background:var(--pri-soft);border-radius:6px 18px 18px 18px;padding:11px 14px}
 .coach-name{font-size:12px;font-weight:700;color:var(--pri);margin-bottom:2px}
@@ -65,8 +65,8 @@ h2{font-size:17px;font-weight:700;margin:0 0 10px;letter-spacing:-.025em}
 
 /* stats */
 .stats{display:flex;gap:16px;align-items:center}
-.ring{--p:0;flex:none;width:76px;height:76px;border-radius:50%;background:conic-gradient(var(--pri) calc(var(--p)*1%),var(--pri-soft) 0);display:grid;place-items:center}
-.ring span{width:62px;height:62px;border-radius:50%;background:var(--card);display:grid;place-items:center;font-weight:800;font-size:18px;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.ring{--p:0;flex:none;width:84px;height:84px;border-radius:50%;background:conic-gradient(var(--pri) calc(var(--p)*1%),var(--pri-soft) 0);display:grid;place-items:center}
+.ring span{width:68px;height:68px;border-radius:50%;background:var(--card);display:grid;place-items:center;font-weight:800;font-size:18px;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
 .stat-txt{flex:1}
 .stat-big{font-weight:800;font-size:17px;letter-spacing:-.03em;margin-bottom:6px}
 .mini{display:flex;gap:14px;font-size:13px;color:var(--sub);font-variant-numeric:tabular-nums}
@@ -100,17 +100,34 @@ h2{font-size:17px;font-weight:700;margin:0 0 10px;letter-spacing:-.025em}
 .dd-num{font-weight:800;font-size:26px;color:var(--fan);white-space:nowrap;margin-top:2px;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
 .dd-title{font-weight:700;font-size:15px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-all}
 
+/* 섹션 제목(카드 밖) + 목록 카드 */
+.sec-title{display:flex;justify-content:space-between;align-items:center;margin:28px 4px 10px}
+.sec-title h2{margin:0;font-size:20px;font-weight:800;letter-spacing:-.035em}
+.sec-title .cnt{color:var(--pri);margin-left:5px}
+.sec-btn{color:var(--pri);font-weight:700;font-size:14.5px;min-height:36px;padding:0 2px}
+.list-card{padding:2px 18px}
+.list-card .empty-txt{padding:22px 0}
+/* 홈 요약 */
+.sum{padding:20px}
+.sum-top{display:flex;gap:18px;align-items:center;width:100%;text-align:left}
+.sum-big{font-size:22px;font-weight:800;letter-spacing:-.045em;line-height:1.3}
+.sum-sub{font-size:13.5px;color:var(--sub);margin-top:4px;font-variant-numeric:tabular-nums}
+.sum-sub b{color:var(--ink)}
+.sum-lock{display:flex;align-items:center;gap:8px;width:100%;margin-top:16px;padding:13px 14px;border-radius:14px;background:var(--sunk);font-size:14px;color:var(--sub);text-align:left}
+.sum-lock b{color:var(--ink)}
+.sum-lock .arr{margin-left:auto;font-size:18px;opacity:.6}
+.foot-hint{text-align:center;font-size:12.5px;color:var(--sub);margin:10px 0 0}
 /* lists */
 .sec-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
 .sec-head h2{margin:0}
 ul.list{list-style:none;margin:0;padding:0}
-.task,.ev{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+.task,.ev{display:flex;align-items:center;gap:14px;padding:15px 0;border-bottom:1px solid var(--line)}
 .task:last-child,.ev:last-child{border-bottom:0}
 .chk{flex:none;width:26px;height:26px;border-radius:50%;border:2px solid color-mix(in srgb,var(--sub) 45%,transparent);display:grid;place-items:center;font-weight:800;color:var(--pri-ink);font-size:13px;transition:background .15s,border-color .15s}
 .task.done .chk{background:var(--pri);border-color:var(--pri);animation:pop-chk .25s ease-out}
 @keyframes pop-chk{50%{transform:scale(1.18)}}
 .t-main{flex:1;min-width:0}
-.t-title{word-break:break-word;font-weight:500}
+.t-title{word-break:break-word;font-weight:600;font-size:16px;letter-spacing:-.025em;line-height:1.4}
 .task.done .t-title{text-decoration:line-through;text-decoration-color:color-mix(in srgb,var(--sub) 60%,transparent);color:var(--sub)}
 .t-meta{display:flex;gap:5px;margin-top:4px;flex-wrap:wrap}
 .star{color:var(--fan);margin-right:3px}
@@ -369,7 +386,7 @@ textarea{font:inherit;font-size:16px;letter-spacing:inherit;width:100%;padding:1
 (() => {
 'use strict';
 const KEY = 'gyeolsim-v1';
-const APP_VERSION = 'v28'; // sw.js의 CACHE 숫자와 같이 올리기
+const APP_VERSION = 'v29'; // sw.js의 CACHE 숫자와 같이 올리기
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
@@ -898,7 +915,7 @@ function taskItem(t, hideProj, drag) {
     <button class="chk" data-act="toggle" data-id="${esc(t.id)}" aria-label="${t.done ? '완료 취소' : '완료'}">${t.done ? '✓' : ''}</button>
     <div class="t-main"><div class="t-title" data-act="edit-task" data-id="${esc(t.id)}">${esc(t.title)}</div>
     <div class="t-meta">${p ? `<span class="badge pj" style="--c:${pjColor(p)}">📁 ${esc(p.title)}</span>` : ''}${dueBadge(t)}${t.detail ? '<span class="badge">📄 상세</span>' : ''}${t.note ? '<span class="badge">📝 메모</span>' : ''}</div></div>
-    ${drag ? '<span class="drag" aria-label="끌어서 순서 바꾸기">≡</span>' : ''}<button class="x" data-act="del-task" data-id="${esc(t.id)}" aria-label="삭제">✕</button></li>`;
+    ${drag ? '<span class="drag" aria-label="끌어서 순서 바꾸기">≡</span>' : ''}</li>`;
 }
 function addTask(title, due, pri, projectId, detail) {
   title = title.trim(); if (!title) return false;
@@ -1063,7 +1080,7 @@ function openTaskEdit(t) {
       ${projSelect(p ? p.id : '')}
       <label class="f">상세 내용<textarea name="detail" maxlength="2000" placeholder="해야 할 범위, 참고 링크, 준비물 등">${esc(t.detail || '')}</textarea></label>
       <label class="f">완료 후 메모<textarea name="note" maxlength="2000" placeholder="결과, 배운 점, 다음에 이어서 할 것">${esc(t.note || '')}</textarea></label>
-      ${t.done ? '' : `<div class="btn-row" style="margin:4px 0 10px"><button type="button" class="btn ghost sm" data-act="task-top" data-id="${esc(t.id)}">⤒ 맨 위로</button></div>`}
+      <div class="btn-row" style="margin:4px 0 14px">${t.done ? '' : `<button type="button" class="btn ghost sm" data-act="task-top" data-id="${esc(t.id)}">⤒ 맨 위로</button>`}<button type="button" class="btn danger sm" data-act="del-task" data-id="${esc(t.id)}">삭제</button></div>
       <div class="sheet-btns"><button type="button" class="btn ghost" data-act="close">취소</button><button class="btn primary">저장</button></div>
     </form></div></div>`;
 }
@@ -1087,8 +1104,8 @@ function routineItem(r, ds) {
 function routineCard(empty) {
   const t = todayStr(), list = routinesOn(t), n = routinesDoneOn(t).length;
   if (!list.length && !empty) return '';
-  return `<section class="card">
-    <div class="sec-head"><h2>🔁 오늘의 루틴${list.length ? ` <span class="muted" style="font-size:13px;font-weight:600">${n}/${list.length}</span>` : ''}</h2><button class="btn ghost sm" data-act="routines">${S.routines.length ? '관리' : '+ 루틴'}</button></div>
+  return `<div class="sec-title"><h2>오늘의 루틴${list.length ? `<span class="cnt">${n}/${list.length}</span>` : ''}</h2><button class="sec-btn" data-act="routines">${S.routines.length ? '관리' : '+ 추가'}</button></div>
+  <section class="card list-card">
     ${list.length ? `<ul class="list">${list.map(r => routineItem(r, t)).join('')}</ul>`
       : `<div class="empty-txt">${S.routines.length ? '오늘은 쉬는 날이에요. 정해 둔 루틴이 없어요.' : '기상 스트레칭, 물 2L처럼 매일 꼭 지키고 싶은 일과를 루틴으로 만들어 보세요. 체크하면 오늘 목표에도 들어가요.'}</div>`}
   </section>`;
@@ -1128,29 +1145,32 @@ function renderHome() {
   ${bg ? `<div class="banner">${bg}<div class="ov"><div class="sub">${dateTxt}</div>${title}</div></div>`
     : `<div class="top"><div><div class="sub">${dateTxt}</div>${title}</div></div>`}
   ${!standalone && !S.ui.installHidden ? `<div class="install"><div>📲 Safari <b>공유 버튼</b> → <b>홈 화면에 추가</b>를 누르면 앱처럼 쓸 수 있어요.</div><button data-act="hide-install" aria-label="닫기">✕</button></div>` : ''}
-  <button class="card stats" style="width:100%;text-align:left" data-act="tab" data-tab="tasks">
-    <div class="ring" style="--p:${pct}"><span>${d}/${goal}</span></div>
-    <div class="stat-txt"><div class="stat-big">${goal ? `오늘 목표 ${pct}%` : '오늘 마감인 할 일이 없어요'}</div>
-      <div class="mini"><span>⭐ <b>${S.stats.points}</b>점</span><span>🔥 <b>${curStreak()}</b>일 연속</span></div></div>
-  </button>
-  ${rewardCard()}
-  ${routineCard(true)}
-  <section class="card">
-    <div class="sec-head"><h2>오늘 할 일</h2><button class="btn ghost sm" data-act="new-task">+ 할 일</button></div>
+  <section class="card sum">
+    <button class="sum-top" data-act="tab" data-tab="tasks">
+      <div class="ring" style="--p:${pct}"><span>${d}/${goal}</span></div>
+      <div class="stat-txt"><div class="sum-big">${!goal ? '오늘 정한 일이 없어요' : d >= goal ? '오늘 목표 달성! 🎉' : `${goal - d}개 남았어요`}</div>
+        <div class="sum-sub">⭐ <b>${S.stats.points}</b>점 · 🔥 <b>${curStreak()}</b>일 연속</div></div>
+    </button>
+    ${rewardOpen() ? '' : `<button class="sum-lock" data-act="reward-locked">🔒 <span>${goal ? `<b>${goal - d}개</b> 더 끝내면 ` : '할 일을 끝내면 '}오늘의 보상이 열려요</span><span class="arr">›</span></button>`}
+  </section>
+  ${rewardOpen() ? rewardCard() : ''}
+  <div class="sec-title"><h2>오늘 할 일${todays.length ? `<span class="cnt">${todays.filter(x => !x.done).length}</span>` : ''}</h2><button class="sec-btn" data-act="new-task">+ 추가</button></div>
+  <section class="card list-card">
     ${todays.length ? `<ul class="list">${todays.map(x => taskItem(x)).join('')}</ul>` : '<div class="empty-txt">오늘 할 일이 없어요.</div>'}
   </section>
+  ${routineCard(true)}
+  <div class="sec-title"><h2>오늘 일정</h2><button class="sec-btn" data-act="add-event" data-d="${t}">+ 추가</button></div>
+  <section class="card list-card">
+    ${evs.length ? `<ul class="list">${evs.map(evItem).join('')}</ul>` : '<div class="empty-txt">오늘 잡힌 일정이 없어요.</div>'}
+  </section>
+  <div class="sec-title"><h2>${now.getMonth() + 1}월 목표</h2><button class="sec-btn" data-act="tab" data-tab="proj">전체 보기</button></div>
   <section class="card">
-    <div class="sec-head"><h2>${now.getMonth() + 1}월 목표</h2><button class="btn ghost sm" data-act="tab" data-tab="proj">전체</button></div>
     ${projs.length ? projs.map(p => {
       const s = projStats(p);
       return `<button class="mp" style="--c:${pjColor(p)}" data-act="open-proj" data-id="${esc(p.id)}">
         <div class="pj-row"><span class="mp-title">${esc(p.title)}</span><span><b>${s.pct}%</b>${s.dleft !== null ? ' · ' + ddayTxt(s.dleft) : ''}</span></div>
         <div class="pbar thin"><i style="width:${s.pct}%"></i></div></button>`;
     }).join('') : '<div class="empty-txt">이번 달 진행 중인 목표가 없어요.</div>'}
-  </section>
-  <section class="card">
-    <div class="sec-head"><h2>오늘 일정</h2><button class="btn ghost sm" data-act="add-event" data-d="${t}">+ 일정</button></div>
-    ${evs.length ? `<ul class="list">${evs.map(evItem).join('')}</ul>` : '<div class="empty-txt">오늘 잡힌 일정이 없어요.</div>'}
   </section>`;
 }
 
@@ -1364,12 +1384,12 @@ function renderTasks() {
   return `
   <div class="top"><h1>할 일</h1></div>
   ${coachHTML()}
-  ${taskFilter === 'done' ? '' : routineCard(false)}
-  <div class="chips">${Object.keys(labels).map(k => `<button class="chip ${taskFilter === k ? 'on' : ''}" data-act="filter" data-f="${k}">${labels[k]}<span class="cnt">${groups[k].length}</span></button>`).join('')}</div>
-  ${taskFilter === 'done' ? historyHTML() : `${list.length > 1 ? '<p class="ro-hint">≡를 꾹 누른 채 끌면 순서가 바뀌어요. 할 일 이름을 누르면 수정할 수 있어요.</p>' : ''}
-  <section class="card">
+  <div class="chips" style="margin-top:22px">${Object.keys(labels).map(k => `<button class="chip ${taskFilter === k ? 'on' : ''}" data-act="filter" data-f="${k}">${labels[k]}<span class="cnt">${groups[k].length}</span></button>`).join('')}</div>
+  ${taskFilter === 'done' ? historyHTML() : `<section class="card list-card">
     ${list.length ? `<ul class="list">${list.map(x => taskItem(x, false, true)).join('')}</ul>` : `<div class="empty-txt">${empty[taskFilter]}</div>`}
-  </section>`}
+  </section>
+  ${list.length ? '<p class="foot-hint">이름을 누르면 수정·삭제 · ≡를 끌면 순서 변경</p>' : ''}
+  ${routineCard(false)}`}
   <button class="fab" data-act="new-task" aria-label="할 일 추가">+</button>`;
 }
 
@@ -1701,7 +1721,7 @@ document.addEventListener('click', e => {
       const t = S.tasks.find(x => x.id === el.dataset.id);
       if (t && confirm(`'${t.title}' 할 일을 지울까요?`)) {
         if (t.done) S.stats.points = Math.max(0, S.stats.points - (t.pts || 0));
-        S.tasks = S.tasks.filter(x => x.id !== t.id); save(); render();
+        S.tasks = S.tasks.filter(x => x.id !== t.id); save(); closeSheet(); render(); toast('할 일을 지웠어요.');
       }
       break;
     }
