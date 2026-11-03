@@ -148,6 +148,16 @@ ul.list{list-style:none;margin:0;padding:0}
 .hist-day{display:flex;justify-content:space-between;align-items:baseline;margin:0 0 4px}
 .hist-day h2{margin:0}
 .hist-day span{font-size:12.5px;color:var(--sub)}
+.day-pick{display:flex;gap:5px;flex-wrap:wrap}
+.day-pick label{position:relative}
+.day-pick input{position:absolute;opacity:0;pointer-events:none}
+.day-pick span{display:grid;place-items:center;width:40px;height:40px;border-radius:50%;border:1px solid var(--line);font-weight:700;font-size:14px;color:var(--sub);background:var(--bg)}
+.day-pick input:checked+span{background:var(--pri);border-color:var(--pri);color:var(--pri-ink)}
+.day-pick input:focus-visible+span{outline:2px solid var(--pri);outline-offset:2px}
+.rt-row{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--line)}
+.rt-row:last-child{border-bottom:0}
+.rt-row .t-main{flex:1;min-width:0}
+.hist-rt{font-size:13.5px;color:var(--sub);margin:4px 0 2px}
 .hist-sub{font-size:12.5px;font-weight:700;color:var(--warn);margin:8px 0 0}
 .chip .cnt{margin-left:4px;opacity:.7}
 
@@ -348,7 +358,7 @@ textarea{font:inherit;font-size:16px;width:100%;padding:11px 12px;border:1px sol
 (() => {
 'use strict';
 const KEY = 'gyeolsim-v1';
-const APP_VERSION = 'v25'; // sw.js의 CACHE 숫자와 같이 올리기
+const APP_VERSION = 'v26'; // sw.js의 CACHE 숫자와 같이 올리기
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
@@ -381,6 +391,7 @@ function normCats(list) {
 function defaults() {
   return {
     tasks: [], events: [], projects: [], cats: defaultCats(),
+    routines: [], routineLog: {},
     settings: { name: '', singer: '김결', tone: 'balanced', songs: [], photo: null, alarmTimes: ['11:00', '14:00', '16:00', '20:00', '22:00'] },
     stats: { points: 0, streak: 0, lastGoalDate: null },
     ui: { installHidden: false, pushOn: false },
@@ -415,6 +426,9 @@ function normalize(d) {
     tasks: rankTasks(Array.isArray(d.tasks) ? d.tasks.filter(t => t && t.id && t.title) : []),
     events: Array.isArray(d.events) ? d.events.filter(e => e && e.id && isDate(e.date)) : [],
     projects: Array.isArray(d.projects) ? d.projects.filter(p => p && p.id && p.title) : [],
+    routines: Array.isArray(d.routines) ? d.routines.filter(r => r && r.id && r.title).map(r => ({ ...r, days: Array.isArray(r.days) ? r.days.filter(n => Number.isInteger(n) && n >= 0 && n <= 6) : [] })) : [],
+    routineLog: Object.fromEntries(Object.entries(d.routineLog && typeof d.routineLog === 'object' ? d.routineLog : {})
+      .filter(([k, v]) => isDate(k) && Array.isArray(v)).sort().slice(-400)),
     cats: normCats(d.cats),
     settings: (() => { // 예전 alarmHours(정시 숫자)를 alarmTimes('HH:MM')로 옮김
       const st = { ...b.settings, ...(d.settings || {}) };
@@ -532,9 +546,15 @@ const singerName = () => (S.settings.singer || '').trim() || '최애';
 const josa = (w, a, b) => { const c = String(w).charCodeAt(String(w).length - 1); return c >= 0xAC00 && c <= 0xD7A3 && (c - 0xAC00) % 28 ? a : b; };
 // 오늘 목표 = 오늘 마감인 할 일 + 오늘 끝낸 할 일 (미리 끝낸 일도 목표에 더해짐)
 const todayGoalTasks = () => { const t = todayStr(); return S.tasks.filter(x => x.done ? x.doneAt === t : x.due === t); };
-const goalN = () => todayGoalTasks().length;
+// 하루 루틴: days가 비어 있으면 매일, 아니면 그 요일(0=일~6=토)에만
+const routinesOn = ds => S.routines.filter(r => !r.days.length || r.days.includes(parseD(ds).getDay()));
+const routineChecked = (ds, id) => (S.routineLog[ds] || []).includes(id);
+const routinesDoneOn = ds => routinesOn(ds).filter(r => routineChecked(ds, r.id));
+const daysLabel = r => !r.days.length ? '매일' : [...r.days].sort().map(n => WD[n]).join('·');
+// 오늘 목표 = 오늘 할 일 + 오늘 루틴
+const goalN = () => todayGoalTasks().length + routinesOn(todayStr()).length;
 const goalMet = (d, goal) => goal > 0 && d >= goal;
-const doneToday = () => { const t = todayStr(); return S.tasks.filter(x => x.done && x.doneAt === t).length; };
+const doneToday = () => { const t = todayStr(); return S.tasks.filter(x => x.done && x.doneAt === t).length + routinesDoneOn(t).length; };
 
 const CRUNCH_HOUR = 18; // 이 시각부터 오늘 마감인 일을 재촉
 function remainTxt(n = new Date()) {
@@ -590,7 +610,8 @@ function coachState() {
     }
   }
   if (worst) { v.p = worst.p.title; v.pct = worst.s.pct; v.tp = worst.s.timePct ?? 100; }
-  const sit = goalMet(d, goal) ? 'goalDone' : !active.length ? 'empty' : goal === 0 ? 'free' : d > 0 ? 'progress' : 'start';
+  const rLeft = routinesOn(t).length - routinesDoneOn(t).length;
+  const sit = goalMet(d, goal) ? 'goalDone' : !active.length && !rLeft ? 'empty' : goal === 0 ? 'free' : d > 0 ? 'progress' : 'start';
   return { sit, v };
 }
 /* ---------- 코치 알림 (push/worker.js 서버가 예약된 시간에 보냄) ---------- */
@@ -618,7 +639,7 @@ function pushItems() {
       const c = (x.carry || 0) + Math.max(0, daysBetween(x.due, ds));
       const sit = h >= CRUNCH_HOUR ? 'crunch' : c ? 'carried' : 'today';
       const set = LINES[sit][S.settings.tone] || LINES[sit].balanced;
-      const v = { nm: S.settings.name ? S.settings.name.trim() + ', ' : '', singer: singerName(), goal: off ? pending.length : goalN(), d: off ? 0 : doneToday(),
+      const v = { nm: S.settings.name ? S.settings.name.trim() + ', ' : '', singer: singerName(), goal: off ? pending.length + routinesOn(ds).length : goalN(), d: off ? 0 : doneToday(),
         remain: remainTxt(new Date(at)), task: x.title, c, c1: c + 1 };
       const nv = off || rewardOpen() ? 0 : newVideos().length;
       const more = (pending.length > 1 ? ` (남은 일 ${pending.length}개)` : '') + (nv ? ` · ${singerName()} 새 영상 ${nv}개 잠김 🔒` : '');
@@ -881,6 +902,32 @@ function checkProjectDone(t) {
   p.bonusGiven = true; S.stats.points += 50;
   return p;
 }
+// 오늘 목표를 처음 채운 순간: 연속 기록과 보상 열림 날짜를 남김
+function goalReached() {
+  const td = todayStr();
+  if (S.stats.lastGoalDate === td) return;
+  const y = new Date(); y.setDate(y.getDate() - 1);
+  S.stats.streak = S.stats.lastGoalDate === ymd(y) ? S.stats.streak + 1 : 1;
+  S.stats.lastGoalDate = td;
+}
+const ROUTINE_PTS = 5;
+function toggleRoutine(id) {
+  const t = todayStr(), log = S.routineLog[t] || (S.routineLog[t] = []);
+  if (log.includes(id)) {
+    log.splice(log.indexOf(id), 1);
+    S.stats.points = Math.max(0, S.stats.points - ROUTINE_PTS);
+    save(); render(); return;
+  }
+  const before = doneToday(), wasMet = goalMet(before, goalN());
+  log.push(id); S.stats.points += ROUTINE_PTS;
+  if (!wasMet && goalMet(before + 1, goalN())) {
+    goalReached(); save(); render(); burst();
+    toast(line('goalDone', coachState().v)); return;
+  }
+  save(); render();
+  const left = routinesOn(t).length - routinesDoneOn(t).length;
+  toast(left ? `루틴 체크! +${ROUTINE_PTS}점 · 남은 루틴 ${left}개` : `오늘 루틴 다 지켰어요! +${ROUTINE_PTS}점`);
+}
 function toggleTask(id) {
   const t = S.tasks.find(x => x.id === id); if (!t) return;
   if (!t.done) {
@@ -890,14 +937,7 @@ function toggleTask(id) {
     t.done = true; t.doneAt = todayStr(); t.pts = pts;
     S.stats.points += pts;
     const goalHit = !wasMet && goalMet(before + 1, goalN());
-    if (goalHit) {
-      const td = todayStr();
-      if (S.stats.lastGoalDate !== td) {
-        const y = new Date(); y.setDate(y.getDate() - 1);
-        S.stats.streak = S.stats.lastGoalDate === ymd(y) ? S.stats.streak + 1 : 1;
-        S.stats.lastGoalDate = td;
-      }
-    }
+    if (goalHit) goalReached();
     const pDone = checkProjectDone(t);
     if (goalHit || pDone) {
       save(); render(); burst();
@@ -915,15 +955,11 @@ function toggleTask(id) {
 }
 
 /* ---------- 렌더 ---------- */
-// 마감이 지난 안 끝난 할 일은 오늘로 넘기고, 넘어온 날수를 carry에 쌓음
-// 프로젝트 세부 할 일은 넘기지 않고 프로젝트 안에 '지남'으로 남김
+// 마감이 지난 안 끝난 할 일은 (프로젝트 세부 할 일도) 오늘로 넘기고, 넘어온 날수를 carry에 쌓음
 function rollover() {
   const t = todayStr(); let ch = false;
   for (const x of S.tasks) {
-    if (x.projectId && x.carry) { // 예전 버전에서 넘겨 버린 세부 할 일은 원래 마감일로 되돌림
-      const d = parseD(x.due); d.setDate(d.getDate() - x.carry); x.due = ymd(d); x.carry = 0; ch = true;
-    }
-    if (!x.projectId && !x.done && isDate(x.due) && x.due < t) { x.carry = (x.carry || 0) + daysBetween(x.due, t); x.due = t; ch = true; }
+    if (!x.done && isDate(x.due) && x.due < t) { x.carry = (x.carry || 0) + daysBetween(x.due, t); x.due = t; ch = true; }
   }
   if (newTaskDue < t) newTaskDue = t;
   if (ch) save();
@@ -1029,6 +1065,41 @@ function monthProjects() {
   }).sort(projSort);
 }
 
+function routineItem(r, ds) {
+  const on = routineChecked(ds, r.id);
+  return `<li class="task ${on ? 'done' : ''}">
+    <button class="chk" data-act="routine" data-id="${esc(r.id)}" aria-label="${on ? '체크 취소' : '체크'}">${on ? '✓' : ''}</button>
+    <div class="t-main"><div class="t-title">${esc(r.title)}</div>${r.days.length ? `<div class="t-meta"><span class="badge">${daysLabel(r)}</span></div>` : ''}</div></li>`;
+}
+// 오늘의 루틴 카드. empty: 루틴이 없을 때 만들기 안내를 보일지
+function routineCard(empty) {
+  const t = todayStr(), list = routinesOn(t), n = routinesDoneOn(t).length;
+  if (!list.length && !empty) return '';
+  return `<section class="card">
+    <div class="sec-head"><h2>🔁 오늘의 루틴${list.length ? ` <span class="muted" style="font-size:13px;font-weight:600">${n}/${list.length}</span>` : ''}</h2><button class="btn ghost sm" data-act="routines">${S.routines.length ? '관리' : '+ 루틴'}</button></div>
+    ${list.length ? `<ul class="list">${list.map(r => routineItem(r, t)).join('')}</ul>`
+      : `<div class="empty-txt">${S.routines.length ? '오늘은 쉬는 날이에요. 정해 둔 루틴이 없어요.' : '기상 스트레칭, 물 2L처럼 매일 꼭 지키고 싶은 일과를 루틴으로 만들어 보세요. 체크하면 오늘 목표에도 들어가요.'}</div>`}
+  </section>`;
+}
+// 루틴 관리 시트. editId: 고치는 중인 루틴 ('new'면 새로 만들기)
+function openRoutineSheet(editId) {
+  const r = editId && editId !== 'new' ? S.routines.find(x => x.id === editId) : null;
+  const form = editId ? `<form data-form="routine" data-id="${r ? esc(r.id) : ''}">
+      <label class="f">루틴 이름<input type="text" name="text" required maxlength="40" value="${r ? esc(r.title) : ''}" placeholder="예: 아침 스트레칭 10분" autocomplete="off"></label>
+      <div class="f"><span class="muted" style="font-weight:600;font-size:13px">요일 (하나도 안 고르면 매일)</span>
+        <div class="day-pick" style="margin-top:6px">${WD.map((w, i) => `<label><input type="checkbox" name="day" value="${i}" ${r && r.days.includes(i) ? 'checked' : ''}><span>${w}</span></label>`).join('')}</div></div>
+      <div class="sheet-btns"><button type="button" class="btn ghost" data-act="routines">취소</button><button class="btn primary">${r ? '저장' : '추가'}</button></div>
+    </form>` : '';
+  sheet(`<h3>하루 루틴</h3>
+    ${editId ? form : `${S.routines.length ? `<div>${S.routines.map(x => `<div class="rt-row">
+        <div class="t-main"><div class="t-title">${esc(x.title)}</div><div class="t-meta"><span class="badge">${daysLabel(x)}</span></div></div>
+        <button class="btn ghost sm" data-act="edit-routine" data-id="${esc(x.id)}">수정</button>
+        <button class="x" data-act="del-routine" data-id="${esc(x.id)}" aria-label="삭제">✕</button></div>`).join('')}</div>`
+      : '<div class="empty-txt">아직 루틴이 없어요.</div>'}
+      <p class="ro-hint" style="margin-top:8px">체크한 루틴은 오늘 목표에 들어가고 하나에 +${ROUTINE_PTS}점이에요.</p>
+      <div class="sheet-btns"><button type="button" class="btn ghost" data-act="close">닫기</button><button type="button" class="btn primary" data-act="edit-routine" data-id="new">+ 루틴 추가</button></div>`}`, '하루 루틴');
+  if (editId === 'new') setTimeout(() => { const i = $('#sheet input[name=text]'); if (i) i.focus(); }, 50);
+}
 function renderHome() {
   const t = todayStr(), now = new Date();
   const d = doneToday(), goal = goalN();
@@ -1051,6 +1122,7 @@ function renderHome() {
       <div class="mini"><span>⭐ <b>${S.stats.points}</b>점</span><span>🔥 <b>${curStreak()}</b>일 연속</span></div></div>
   </button>
   ${rewardCard()}
+  ${routineCard(true)}
   <section class="card">
     <div class="sec-head"><h2>오늘 할 일</h2><button class="btn ghost sm" data-act="new-task">+ 할 일</button></div>
     ${todays.length ? `<ul class="list">${todays.map(x => taskItem(x)).join('')}</ul>` : '<div class="empty-txt">오늘 할 일이 없어요.</div>'}
@@ -1108,7 +1180,7 @@ function ddayHTML() {
 function rewardCard() {
   const singer = esc(singerName()), open = rewardOpen(), d = doneToday(), goal = goalN();
   const nv = newVideos(), day = S.fan.days[todayStr()] || {}, ann = anniversary();
-  const status = open ? '오늘 목표 달성! 다 열렸어요 🎉' : goal ? `할 일 <b>${goal - d}개</b> 더 끝내면 열려요` : '오늘 마감인 할 일을 정하면 보상이 생겨요';
+  const status = open ? '오늘 목표 달성! 다 열렸어요 🎉' : goal ? `<b>${goal - d}개</b> 더 끝내면 열려요` : '오늘 할 일이나 루틴을 정하면 보상이 생겨요';
   const tile = (act, ic, tt, td, blur) => `<button class="tile ${open ? 'go' : 'lock'}" ${open ? `data-act="${act}"` : 'data-act="reward-locked"'}>
     ${blur ? `<i class="blur" style="background-image:url('${blur}')"></i>` : ''}<span class="ti">${ic}</span><span><span class="tt">${tt}</span><br><span class="td">${td}</span></span></button>`;
   const card = day.card && cardBy(day.card);
@@ -1244,7 +1316,8 @@ const timeVal = el => el.th.value ? `${el.th.value}:${el.tm.value || '00'}` : ''
 let histDays = 14;
 function historyHTML() {
   const t = todayStr(), days = new Map();
-  const add = (d, k, x) => { if (!isDate(d)) return; if (!days.has(d)) days.set(d, { done: [], miss: [] }); days.get(d)[k].push(x); };
+  const add = (d, k, x) => { if (!isDate(d)) return; if (!days.has(d)) days.set(d, { done: [], miss: [] }); if (k) days.get(d)[k].push(x); };
+  for (const d of Object.keys(S.routineLog)) if (d <= t && S.routineLog[d].length) add(d);
   for (const x of S.tasks) {
     if (x.done) add(x.doneAt, 'done', x);
     else if (x.due) { // 이월된 일은 원래 마감일에 '못 끝냄'으로
@@ -1255,9 +1328,10 @@ function historyHTML() {
   const keys = [...days.keys()].sort().reverse();
   if (!keys.length) return '<section class="card"><div class="empty-txt">아직 기록이 없어요. 할 일을 끝내면 날짜별로 여기에 남아요.</div></section>';
   return keys.slice(0, histDays).map(d => {
-    const g = days.get(d);
+    const g = days.get(d), rAll = routinesOn(d), rDone = S.routines.filter(r => routineChecked(d, r.id));
     return `<section class="card">
       <div class="hist-day"><h2>${d === t ? '오늘' : fmtMD(d)}</h2><span>완료 ${g.done.length}${g.miss.length ? ` · 못 끝냄 ${g.miss.length}` : ''}</span></div>
+      ${rAll.length || rDone.length ? `<div class="hist-rt">🔁 루틴 ${rDone.length}/${Math.max(rAll.length, rDone.length)}${rDone.length ? ' · ' + rDone.map(r => esc(r.title)).join(', ') : ''}</div>` : ''}
       ${g.done.length ? `<ul class="list">${g.done.sort(taskSort).map(x => taskItem(x)).join('')}</ul>` : ''}
       ${g.miss.length ? `<div class="hist-sub">못 끝낸 일</div><ul class="list">${g.miss.sort(taskSort).map(x => taskItem(x)).join('')}</ul>` : ''}
     </section>`;
@@ -1278,6 +1352,7 @@ function renderTasks() {
   return `
   <div class="top"><h1>할 일</h1></div>
   ${coachHTML()}
+  ${taskFilter === 'done' ? '' : routineCard(false)}
   <div class="chips">${Object.keys(labels).map(k => `<button class="chip ${taskFilter === k ? 'on' : ''}" data-act="filter" data-f="${k}">${labels[k]}<span class="cnt">${groups[k].length}</span></button>`).join('')}</div>
   ${taskFilter === 'done' ? historyHTML() : `${list.length > 1 ? '<p class="ro-hint">≡를 꾹 누른 채 끌면 순서가 바뀌어요. 할 일 이름을 누르면 수정할 수 있어요.</p>' : ''}
   <section class="card">
@@ -1597,6 +1672,14 @@ document.addEventListener('click', e => {
       break;
     }
     case 'toggle': toggleTask(el.dataset.id); break;
+    case 'routine': toggleRoutine(el.dataset.id); break;
+    case 'routines': openRoutineSheet(null); break;
+    case 'edit-routine': openRoutineSheet(el.dataset.id); break;
+    case 'del-routine': {
+      const r = S.routines.find(x => x.id === el.dataset.id);
+      if (r && confirm(`'${r.title}' 루틴을 지울까요? (지난 기록의 체크는 남아요)`)) { S.routines = S.routines.filter(x => x !== r); save(); render(); openRoutineSheet(null); }
+      break;
+    }
     case 'del-task': {
       const t = S.tasks.find(x => x.id === el.dataset.id);
       if (t && confirm(`'${t.title}' 할 일을 지울까요?`)) {
@@ -1622,7 +1705,7 @@ document.addEventListener('click', e => {
     case 'nudge': nudge++; render(); break;
     case 'reward-locked': {
       const left = goalN() - doneToday();
-      toast(goalN() ? `할 일 ${left}개 더 끝내면 열려요! 🔒` : '오늘 마감인 할 일을 정하고 끝내면 열려요.'); break;
+      toast(goalN() ? `${left}개 더 끝내면 열려요! 🔒` : '오늘 할 일이나 루틴을 정하고 끝내면 열려요.'); break;
     }
     case 'draw-card': {
       if (!rewardOpen()) break;
@@ -1760,6 +1843,13 @@ document.addEventListener('submit', e => {
     }
     save(); closeSheet(); tab = 'proj'; openProject = p.id; render(); window.scrollTo(0, 0);
     toast(f.dataset.id ? '프로젝트를 수정했어요.' : '프로젝트를 만들었어요. 하나씩 끝내 보자!');
+  } else if (k === 'routine') {
+    const title = el.text.value.trim().slice(0, 40); if (!title) { toast('루틴 이름을 입력해 주세요.'); return; }
+    const days = [...f.querySelectorAll('input[name=day]:checked')].map(i => +i.value);
+    const r = f.dataset.id && S.routines.find(x => x.id === f.dataset.id);
+    if (r) Object.assign(r, { title, days: days.length === 7 ? [] : days });
+    else S.routines.push({ id: uid(), title, days: days.length === 7 ? [] : days, createdAt: Date.now() });
+    save(); render(); openRoutineSheet(null); toast(r ? '루틴을 수정했어요.' : '루틴을 추가했어요.');
   } else if (k === 'task-edit') {
     const t = S.tasks.find(x => x.id === f.dataset.id); if (!t) { closeSheet(); return; }
     const title = el.text.value.trim(); if (!title) { toast('할 일을 입력해 주세요.'); return; }
