@@ -358,7 +358,7 @@ textarea{font:inherit;font-size:16px;width:100%;padding:11px 12px;border:1px sol
 (() => {
 'use strict';
 const KEY = 'gyeolsim-v1';
-const APP_VERSION = 'v26'; // sw.js의 CACHE 숫자와 같이 올리기
+const APP_VERSION = 'v27'; // sw.js의 CACHE 숫자와 같이 올리기
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
@@ -889,9 +889,10 @@ function taskItem(t, hideProj, drag) {
     <div class="t-meta">${p ? `<span class="badge pj" style="--c:${pjColor(p)}">📁 ${esc(p.title)}</span>` : ''}${dueBadge(t)}${t.detail ? '<span class="badge">📄 상세</span>' : ''}${t.note ? '<span class="badge">📝 메모</span>' : ''}</div></div>
     ${drag ? '<span class="drag" aria-label="끌어서 순서 바꾸기">≡</span>' : ''}<button class="x" data-act="del-task" data-id="${esc(t.id)}" aria-label="삭제">✕</button></li>`;
 }
-function addTask(title, due, pri, projectId) {
+function addTask(title, due, pri, projectId, detail) {
   title = title.trim(); if (!title) return false;
   S.tasks.push({ id: uid(), rank: S.tasks.reduce((m, x) => Math.max(m, x.rank || 0), 0) + 1, title: title.slice(0, 100), due: isDate(due) ? due : null, priority: 'normal', done: false, doneAt: null, createdAt: Date.now(), projectId: projectId && projById(projectId) ? projectId : null });
+  if (detail && detail.trim()) S.tasks[S.tasks.length - 1].detail = detail.trim().slice(0, 2000);
   save(); return true;
 }
 // 프로젝트의 마지막 세부 할 일을 끝냈는지 확인 (보너스는 프로젝트당 한 번)
@@ -1040,15 +1041,15 @@ function openProjectSheet(p) {
     </form></div></div>`;
   if (isNew) setTimeout(() => { const i = $('#sheet input[name=text]'); if (i) i.focus(); }, 50);
 }
-// 할 일 수정: 이름·마감일·중요·상세 내용·완료 후 메모
+// 할 일 수정: 이름·마감일·프로젝트·상세 내용·완료 후 메모
 function openTaskEdit(t) {
   const p = t.projectId && projById(t.projectId);
   $('#sheet').innerHTML = `<div class="sheet-bg" data-act="close-bg"><div class="sheet" role="dialog" aria-label="할 일 수정">
     <form data-form="task-edit" data-id="${esc(t.id)}">
       <h3>할 일 수정</h3>
-      ${p ? `<div class="t-meta" style="margin:-4px 0 10px"><span class="badge pj" style="--c:${pjColor(p)}">📁 ${esc(p.title)}</span></div>` : ''}
       <label class="f">할 일<input type="text" name="text" required maxlength="100" value="${esc(t.title)}" autocomplete="off"></label>
-      <div class="f"><span class="muted" style="font-weight:600;font-size:13px">마감일</span>${datePick('due', t.due || '', { max: p && p.end || '', none: true })}</div>
+      <div class="f"><span class="muted" style="font-weight:600;font-size:13px">마감일</span>${datePick('due', t.due || '', { none: true })}</div>
+      ${projSelect(p ? p.id : '')}
       <label class="f">상세 내용<textarea name="detail" maxlength="2000" placeholder="해야 할 범위, 참고 링크, 준비물 등">${esc(t.detail || '')}</textarea></label>
       <label class="f">완료 후 메모<textarea name="note" maxlength="2000" placeholder="결과, 배운 점, 다음에 이어서 할 것">${esc(t.note || '')}</textarea></label>
       ${t.done ? '' : `<div class="btn-row" style="margin:4px 0 10px"><button type="button" class="btn ghost sm" data-act="task-top" data-id="${esc(t.id)}">⤒ 맨 위로</button></div>`}
@@ -1361,6 +1362,10 @@ function renderTasks() {
   <button class="fab" data-act="new-task" aria-label="할 일 추가">+</button>`;
 }
 
+// 프로젝트 고르는 칸. 프로젝트가 하나도 없으면 안 보임
+function projSelect(cur) {
+  return S.projects.length ? `<label class="f">프로젝트<select name="pid" aria-label="프로젝트" style="margin-top:5px"><option value="">프로젝트 없음</option>${[...S.projects].sort(projSort).map(p => `<option value="${esc(p.id)}" ${p.id === cur ? 'selected' : ''}>📁 ${esc(p.title)}</option>`).join('')}</select></label>` : '';
+}
 function openTaskSheet() {
   newTaskDue = todayStr();
   $('#sheet').innerHTML = `<div class="sheet-bg" data-act="close-bg"><div class="sheet" role="dialog" aria-label="할 일 추가">
@@ -1368,7 +1373,8 @@ function openTaskSheet() {
       <h3>할 일 추가</h3>
       <label class="f">할 일<input type="text" name="text" required maxlength="100" autocomplete="off" enterkeyhint="done"></label>
       <div class="f"><span class="muted" style="font-weight:600;font-size:13px">마감일</span>${datePick('due', newTaskDue, { min: todayStr(), none: true })}</div>
-      ${S.projects.length ? `<label class="f">프로젝트<select name="pid" aria-label="프로젝트" style="margin-top:5px"><option value="">프로젝트 없음</option>${[...S.projects].sort(projSort).map(p => `<option value="${esc(p.id)}">📁 ${esc(p.title)}</option>`).join('')}</select></label>` : ''}
+      ${projSelect('')}
+      <label class="f">상세 내용<textarea name="detail" maxlength="2000" placeholder="해야 할 범위, 참고 링크, 준비물 등 (안 써도 돼요)"></textarea></label>
       <div class="sheet-btns"><button type="button" class="btn ghost" data-act="close">취소</button><button class="btn primary">추가</button></div>
     </form></div></div>`;
   setTimeout(() => { const i = $('#sheet input[name=text]'); if (i) i.focus(); }, 50);
@@ -1855,12 +1861,17 @@ document.addEventListener('submit', e => {
     const title = el.text.value.trim(); if (!title) { toast('할 일을 입력해 주세요.'); return; }
     const due = isDate(el.due.value) ? el.due.value : null;
     if (due !== t.due) delete t.carry; // 날짜를 직접 다시 잡으면 이월 표시는 지움
+    const oldPid = t.projectId || null;
+    if (el.pid) t.projectId = el.pid.value && projById(el.pid.value) ? el.pid.value : null;
     Object.assign(t, { title: title.slice(0, 100), due,
       detail: el.detail.value.trim().slice(0, 2000), note: el.note.value.trim().slice(0, 2000) });
-    save(); closeSheet(); render(); toast('할 일을 수정했어요.');
+    save(); closeSheet(); render();
+    const np = t.projectId && t.projectId !== oldPid && projById(t.projectId);
+    // 프로젝트 세부 할 일은 마감일에만 할 일 목록에 보이니, 어디로 갔는지 알려 줌
+    toast(np ? `📁 ${np.title}에 넣었어요.${inTodo(t) ? '' : ' 마감일이 되면 할 일 목록에 나와요.'}` : '할 일을 수정했어요.');
   } else if (k === 'add-task') {
     if (!el.text.value.trim()) { toast('할 일을 입력해 주세요.'); return; }
-    if (addTask(el.text.value, el.due.value, false, el.pid ? el.pid.value : null)) { closeSheet(); render(); toast('할 일을 추가했어요.'); }
+    if (addTask(el.text.value, el.due.value, false, el.pid ? el.pid.value : null, el.detail.value)) { closeSheet(); render(); toast('할 일을 추가했어요.'); }
   } else if (k === 'cat') {
     const color = hexOk(el.color.value) ? el.color.value : CAT_COLORS[0];
     const c = f.dataset.id && S.cats.find(x => x.id === f.dataset.id);
