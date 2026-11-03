@@ -535,7 +535,7 @@ label.f input,label.f textarea{color:var(--ink);font-weight:400}
 (() => {
 'use strict';
 const KEY = 'gyeolsim-v1';
-const APP_VERSION = 'v36'; // sw.js의 CACHE 숫자와 같이 올리기
+const APP_VERSION = 'v37'; // sw.js의 CACHE 숫자와 같이 올리기
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
@@ -1873,7 +1873,7 @@ function renderSettings() {
     <div class="acc-pick">${[...ACCENTS, ...S.fan.theme.customs].map(c => `<button style="--c:${c}" class="${(S.fan.theme.accent || ACCENTS[0]).toLowerCase() === c ? 'on' : ''}" data-act="accent" data-v="${c}" aria-label="색 ${c}"></button>`).join('')}
       <button class="acc-add" data-act="add-accent" aria-label="내 색 추가">+</button></div>
     ${S.fan.theme.customs.includes((S.fan.theme.accent || '').toLowerCase()) ? `<p class="muted" style="margin:-6px 0 14px">내가 등록한 색이에요. <button class="link" data-act="del-accent" data-v="${S.fan.theme.accent.toLowerCase()}">목록에서 지우기</button></p>`
-      : '<p class="muted" style="margin:-6px 0 14px">+를 눌러 원하는 색을 등록할 수 있어요.</p>'}
+      : ''}
     <div class="lbl" style="font-weight:600;font-size:14px;margin-bottom:6px">배경 사진</div>
     <p class="muted" style="margin:0 0 10px">홈·${esc(singerName())} 탭 맨 위와 할 일 코치 카드에 보여요. 포토카드를 눌러 '배경 사진으로'를 고르거나, 내 사진을 올릴 수 있어요.</p>
     ${bgHTML() ? `<div class="banner">${bgHTML()}</div>` : ''}
@@ -1884,7 +1884,6 @@ function renderSettings() {
 
   <section class="card">
     <h2>코치 알림 🔔</h2>
-    <p class="muted" style="margin:0 0 10px">정한 시간에 아직 안 끝낸 할 일을 코치가 알림으로 재촉해요. 그날 할 일이 없으면 알림이 오지 않아요.</p>
     ${!/^https:/.test(PUSH_API) ? '<p class="muted" style="margin:0"><b>알림 서버 준비 중이에요.</b> 준비되면 여기에서 알림을 켤 수 있어요.</p>'
       : S.ui.pushOn ? `<button class="btn danger sm" data-act="push-off">알림 끄기</button>`
       : `<button class="btn primary sm" data-act="push-on">알림 켜기</button>
@@ -1895,12 +1894,10 @@ function renderSettings() {
       <select id="alarm-h" aria-label="시">${Array.from({ length: 24 }, (_, h) => `<option value="${pad(h)}" ${h === 9 ? 'selected' : ''}>${h < 12 ? '오전' : '오후'} ${h % 12 || 12}시</option>`).join('')}</select>
       <select id="alarm-m" aria-label="분">${Array.from({ length: 12 }, (_, n) => `<option value="${pad(n * 5)}">${pad(n * 5)}분</option>`).join('')}</select>
       <button class="btn ghost" data-act="alarm-add">추가</button></div>` : ''}
-    <p class="muted" style="margin:8px 0 0">알림 내용은 앱을 마지막으로 열었을 때의 할 일 기준이에요. 할 일을 끝냈으면 앱에서 체크해 주세요.</p>
   </section>
 
   <section class="card" id="cats">
     <div class="sec-head"><h2>일정 카테고리</h2>${S.cats.length < 12 ? '<button class="btn ghost sm" data-act="new-cat">+ 추가</button>' : ''}</div>
-    <p class="muted" style="margin:0 0 6px">캘린더 점과 일정 목록에 이 색상이 쓰여요. 눌러서 이름과 색상을 바꿀 수 있어요.</p>
     ${S.cats.map(c => `<div class="song"><i class="dot cat lg" style="--c:${c.color}"></i>
       <button class="song-t" style="text-align:left" data-act="edit-cat" data-id="${esc(c.id)}"><div>${esc(catName(c))}</div><small>${S.events.filter(e => catById(e.type).id === c.id).length}개 일정</small></button>
       ${c.id === 'me' || c.id === 'fan' ? '' : `<button class="x" data-act="del-cat" data-id="${esc(c.id)}" aria-label="삭제">✕</button>`}</div>`).join('')}
