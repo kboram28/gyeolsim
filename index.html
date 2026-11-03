@@ -535,7 +535,7 @@ label.f input,label.f textarea{color:var(--ink);font-weight:400}
 (() => {
 'use strict';
 const KEY = 'gyeolsim-v1';
-const APP_VERSION = 'v35'; // sw.js의 CACHE 숫자와 같이 올리기
+const APP_VERSION = 'v36'; // sw.js의 CACHE 숫자와 같이 올리기
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
@@ -1532,7 +1532,6 @@ function renderCal() {
       <div class="cal-nav"><button class="icon-btn" data-act="prev" aria-label="이전 달">‹</button><button class="icon-btn" data-act="cal-today" aria-label="오늘" style="font-size:12px;font-weight:700">오늘</button><button class="icon-btn" data-act="next" aria-label="다음 달">›</button></div></div>
     <div class="grid">${cells}</div>
   </section>
-  <p class="foot-hint" style="margin:-4px 0 0">날짜를 누르면 그날 일정을 보고 추가할 수 있어요.</p>
   <div class="sec-title"><h2>🎤 다가오는 일정</h2></div>
   <section class="card list-card">
     ${up.length ? up.map(({ e, d }) => {
