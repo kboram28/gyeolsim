@@ -160,6 +160,35 @@ h2{font-size:17px;font-weight:700;margin:0 0 10px;letter-spacing:-.025em}
 .acc-prev .btn{background:var(--c);color:var(--ci)}
 .acc-prev .tx{color:var(--c);font-weight:800}
 input[type=color]{width:100%;height:46px;border:1px solid var(--line);border-radius:var(--r-ctl);background:var(--sunk);padding:4px;margin-top:5px}
+/* 홈: 한눈에 보는 요약 */
+.home .sec-title{margin:22px 4px 8px}
+.home .sec-title h2{font-size:18px}
+.home .sum{padding:16px 18px}
+.home .ring{width:70px;height:70px}
+.home .ring span{width:56px;height:56px;font-size:16px}
+.home .sum-big{font-size:20px}
+.home .sum-lock{margin-top:12px;padding:11px 14px}
+.sum-open{display:flex;align-items:center;gap:8px;width:100%;margin-top:12px;padding:12px 14px;border-radius:14px;background:linear-gradient(135deg,var(--pri),color-mix(in srgb,var(--pri) 55%,var(--fan)));color:var(--pri-ink);font-weight:800;font-size:14.5px;text-align:left}
+.sum-open .arr{margin-left:auto;font-size:18px}
+.mini-card{padding:2px 16px}
+.mini-list{list-style:none;margin:0;padding:0}
+.mini-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.mini-row:last-child{border-bottom:0}
+.chk.sm{width:22px;height:22px;font-size:11px;border-width:2px}
+.mini-row .chk{border-color:color-mix(in srgb,var(--c,var(--sub)) 55%,transparent)}
+.mr-t{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600;font-size:15px;letter-spacing:-.02em;cursor:pointer}
+.mr-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--c);margin-right:7px;vertical-align:2px}
+.mr-side{flex:none;font-size:12px;font-weight:700;color:var(--sub)}
+.mr-side.warn{color:var(--warn)}
+.mini-more{display:block;width:100%;text-align:center;padding:11px 0 10px;font-size:13.5px;font-weight:700;color:var(--pri);border-top:1px solid var(--line)}
+.mini-empty{padding:16px 0;color:var(--sub);font-size:14px;text-align:center}
+.rt-chips{display:flex;flex-wrap:wrap;gap:7px;padding:13px 0}
+.rt-chip{padding:8px 13px;border-radius:999px;border:1.5px solid var(--line);background:var(--sunk);font-weight:700;font-size:14px;color:var(--ink);transition:transform .1s}
+.rt-chip:active{transform:scale(.95)}
+.rt-chip.on{background:var(--pri);border-color:var(--pri);color:var(--pri-ink)}
+.em-d{flex:none;width:40px;font-size:12.5px;font-weight:800;color:var(--c)}
+.em-time{flex:none;font-size:13px;color:var(--sub);font-variant-numeric:tabular-nums}
+.home .mp{padding:10px 0}
 /* lists */
 .sec-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
 .sec-head h2{margin:0}
@@ -429,7 +458,7 @@ textarea{font:inherit;font-size:16px;letter-spacing:inherit;width:100%;padding:1
 (() => {
 'use strict';
 const KEY = 'gyeolsim-v1';
-const APP_VERSION = 'v30'; // sw.js의 CACHE 숫자와 같이 올리기
+const APP_VERSION = 'v31'; // sw.js의 CACHE 숫자와 같이 올리기
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
@@ -1223,15 +1252,24 @@ function renderHome() {
   const t = todayStr(), now = new Date();
   const d = doneToday(), goal = goalN();
   const pct = goal ? Math.min(100, Math.round(d / goal * 100)) : 0;
-  const evs = eventsOn(t);
   const projs = monthProjects();
   const todays = S.tasks.filter(x => x.due === t && (!x.done || x.doneAt === t)).sort((a, b) => (a.done - b.done) || taskSort(a, b));
+  const left = todays.filter(x => !x.done), doneN = todays.length - left.length, MAX = 5;
+  const rts = routinesOn(t), rDone = routinesDoneOn(t).length;
+  // 앞으로 7일 안의 일정 3개
+  const up = S.events.map(e => ({ e, d: nextOccurrence(e, t) })).filter(x => x.d && daysBetween(t, x.d) <= 7)
+    .sort((a, b) => a.d.localeCompare(b.d) || (a.e.time || '99').localeCompare(b.e.time || '99'));
+  const dayTxt = d => { const n = daysBetween(t, d); return n === 0 ? '오늘' : n === 1 ? '내일' : fmtShort(d); };
+  const miniTask = x => { const p = x.projectId && projById(x.projectId);
+    return `<li class="mini-row"${p ? ` style="--c:${pjColor(p)}"` : ''}><button class="chk sm" data-act="toggle" data-id="${esc(x.id)}" aria-label="완료"></button>
+      <span class="mr-t" data-act="edit-task" data-id="${esc(x.id)}">${p ? '<i class="mr-dot"></i>' : ''}${esc(x.title)}</span>
+      ${x.carry ? `<span class="mr-side warn">${x.carry}일째 이월</span>` : ''}</li>`; };
   const standalone = window.navigator.standalone || matchMedia('(display-mode: standalone)').matches;
   const bg = bgHTML(), sd = sinceDays();
   const dateTxt = `${now.getMonth() + 1}월 ${now.getDate()}일 ${WD[now.getDay()]}요일${sd ? ` · ${esc(singerName())}${josa(singerName(), '과', '와')} 함께한 지 ${sd}일째` : ''}`;
   const title = `<h1>${S.settings.name ? esc(S.settings.name) + '의 ' : ''}결심</h1>`;
 
-  return `
+  return `<div class="home">
   ${bg ? `<div class="banner">${bg}<div class="ov"><div class="sub">${dateTxt}</div>${title}</div></div>`
     : `<div class="top"><div><div class="sub">${dateTxt}</div>${title}</div></div>`}
   ${!standalone && !S.ui.installHidden ? `<div class="install"><div>📲 Safari <b>공유 버튼</b> → <b>홈 화면에 추가</b>를 누르면 앱처럼 쓸 수 있어요.</div><button data-act="hide-install" aria-label="닫기">✕</button></div>` : ''}
@@ -1241,32 +1279,45 @@ function renderHome() {
       <div class="stat-txt"><div class="sum-big">${!goal ? '오늘 정한 일이 없어요' : d >= goal ? '오늘 목표 달성! 🎉' : `${goal - d}개 남았어요`}</div>
         <div class="sum-sub">⭐ <b>${S.stats.points}</b>점 · 🔥 <b>${curStreak()}</b>일 연속</div></div>
     </button>
-    ${rewardOpen() ? '' : `<button class="sum-lock" data-act="reward-locked">🔒 <span>${goal ? `<b>${goal - d}개</b> 더 끝내면 ` : '할 일을 끝내면 '}오늘의 보상이 열려요</span><span class="arr">›</span></button>`}
+    ${rewardOpen() ? `<button class="sum-open" data-act="tab" data-tab="fan">🎁 오늘의 보상이 열렸어요! 보러 가기<span class="arr">›</span></button>`
+      : `<button class="sum-lock" data-act="reward-locked">🔒 <span>${goal ? `<b>${goal - d}개</b> 더 끝내면 ` : '할 일을 끝내면 '}오늘의 보상이 열려요</span><span class="arr">›</span></button>`}
   </section>
-  ${rewardOpen() ? rewardCard() : ''}
-  <div class="sec-title"><h2>오늘 할 일${todays.length ? `<span class="cnt">${todays.filter(x => !x.done).length}</span>` : ''}</h2><button class="sec-btn" data-act="new-task">+ 추가</button></div>
-  ${todays.length ? `<ul class="tlist">${todays.map(x => taskItem(x)).join('')}</ul>` : '<div class="card empty-card">오늘 할 일이 없어요.</div>'}
-  ${routineCard(true)}
-  <div class="sec-title"><h2>오늘 일정</h2><button class="sec-btn" data-act="add-event" data-d="${t}">+ 추가</button></div>
-  <section class="card list-card">
-    ${evs.length ? `<ul class="list">${evs.map(evItem).join('')}</ul>` : '<div class="empty-txt">오늘 잡힌 일정이 없어요.</div>'}
+  <div class="sec-title"><h2>오늘 할 일${left.length ? `<span class="cnt">${left.length}</span>` : ''}</h2><button class="sec-btn" data-act="new-task">+ 추가</button></div>
+  <section class="card mini-card">
+    ${left.length ? `<ul class="mini-list">${left.slice(0, MAX).map(miniTask).join('')}</ul>`
+      : `<div class="mini-empty">${todays.length ? '오늘 할 일을 다 끝냈어요! 👏' : '오늘 할 일이 없어요.'}</div>`}
+    ${left.length > MAX || doneN ? `<button class="mini-more" data-act="tab" data-tab="tasks">${left.length > MAX ? `${left.length - MAX}개 더 보기` : '할 일 탭에서 보기'}${doneN ? ` · 오늘 끝낸 일 ${doneN}개` : ''} ›</button>` : ''}
   </section>
-  <div class="sec-title"><h2>${now.getMonth() + 1}월 목표</h2><button class="sec-btn" data-act="tab" data-tab="proj">전체 보기</button></div>
-  <section class="card">
+  <div class="sec-title"><h2>오늘의 루틴${rts.length ? `<span class="cnt">${rDone}/${rts.length}</span>` : ''}</h2><button class="sec-btn" data-act="routines">${S.routines.length ? '관리' : '+ 추가'}</button></div>
+  <section class="card mini-card">
+    ${rts.length ? `<div class="rt-chips">${rts.map(r => { const on = routineChecked(t, r.id);
+      return `<button class="rt-chip ${on ? 'on' : ''}" data-act="routine" data-id="${esc(r.id)}" aria-pressed="${on}">${on ? '✓ ' : ''}${esc(r.title)}</button>`; }).join('')}</div>`
+      : `<div class="mini-empty">${S.routines.length ? '오늘은 쉬는 날이에요.' : '매일 지킬 일과를 루틴으로 만들어 보세요.'}</div>`}
+  </section>
+  <div class="sec-title"><h2>다가오는 일정</h2><button class="sec-btn" data-act="tab" data-tab="cal">캘린더 ›</button></div>
+  <section class="card mini-card">
+    ${up.length ? `<div>${up.slice(0, 3).map(({ e, d }) => `<button class="mini-row" style="width:100%;text-align:left;--c:${catById(e.type).color}" data-act="day" data-d="${d}">
+      <span class="em-d">${dayTxt(d)}</span><span class="mr-t">${esc(e.title)}</span><span class="em-time">${e.time ? esc(e.time) : '종일'}</span></button>`).join('')}</div>`
+      : '<div class="mini-empty">일주일 안에 잡힌 일정이 없어요.</div>'}
+    ${up.length > 3 ? `<button class="mini-more" data-act="tab" data-tab="cal">${up.length - 3}개 더 보기 ›</button>` : ''}
+  </section>
+  <div class="sec-title"><h2>${now.getMonth() + 1}월 목표</h2><button class="sec-btn" data-act="tab" data-tab="proj">전체 ›</button></div>
+  <section class="card mini-card">
     ${projs.length ? projs.map(p => {
       const s = projStats(p);
       return `<button class="mp" style="--c:${pjColor(p)}" data-act="open-proj" data-id="${esc(p.id)}">
         <div class="pj-row"><span class="mp-title">${esc(p.title)}</span><span><b>${s.pct}%</b>${s.dleft !== null ? ' · ' + ddayTxt(s.dleft) : ''}</span></div>
         <div class="pbar thin"><i style="width:${s.pct}%"></i></div></button>`;
-    }).join('') : '<div class="empty-txt">이번 달 진행 중인 목표가 없어요.</div>'}
-  </section>`;
+    }).join('') : '<div class="mini-empty">이번 달 진행 중인 목표가 없어요.</div>'}
+  </section>
+  </div>`;
 }
 
 function coachHTML() {
   const { v } = coachState();
   const tone = TONE[S.settings.tone] || TONE.balanced;
   const bg = bgHTML(), singer = esc(singerName());
-  const lock = rewardOpen() ? `<button class="rw-lock link" style="display:block" data-act="tab" data-tab="home">🎁 오늘의 보상이 열렸어요. 보러 가기</button>`
+  const lock = rewardOpen() ? `<button class="rw-lock link" style="display:block" data-act="tab" data-tab="fan">🎁 오늘의 보상이 열렸어요. 보러 가기</button>`
     : v.goal ? `<div class="rw-lock">🔒 <b>${v.goal - v.d}개 더</b> 끝내면 ${singer} 포토카드·새 영상 열림</div>` : '';
   return `<section class="card hero">
     ${bg ? `<div class="banner">${bg}</div>` : ''}
