@@ -531,7 +531,7 @@ label.f input,label.f textarea{color:var(--ink);font-weight:400}
 (() => {
 'use strict';
 const KEY = 'gyeolsim-v1';
-const APP_VERSION = 'v40'; // sw.js의 CACHE 숫자와 같이 올리기
+const APP_VERSION = 'v41'; // sw.js의 CACHE 숫자와 같이 올리기
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
@@ -1918,6 +1918,42 @@ function openCatSheet(c) {
   if (isNew) setTimeout(() => { const i = $('#sheet input[name=text]'); if (i) i.focus(); }, 50);
 }
 const closeSheet = () => { $('#sheet').innerHTML = ''; };
+// 창을 아래로 끌어내리면 닫기 (맨 위까지 스크롤된 상태에서만)
+(() => {
+  let sh = null, bg = null, y0 = 0, t0 = 0, dy = 0, drag = false;
+  const host = $('#sheet');
+  host.addEventListener('touchstart', e => {
+    const s = e.target.closest('.sheet');
+    sh = null;
+    if (!s || e.touches.length > 1 || e.target.closest('textarea,input[type=range]') || s.scrollTop > 0) return;
+    sh = s; bg = s.parentElement; y0 = e.touches[0].clientY; t0 = Date.now(); dy = 0; drag = false;
+  }, { passive: true });
+  host.addEventListener('touchmove', e => {
+    if (!sh) return;
+    dy = e.touches[0].clientY - y0;
+    if (!drag) {
+      if (dy < -4 || sh.scrollTop > 0) { sh = null; return; } // 위로 끌면 평소처럼 스크롤
+      if (dy < 8) return;
+      drag = true; sh.style.animation = 'none'; sh.style.transition = 'none';
+      if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+    }
+    e.preventDefault();
+    const d = Math.max(0, dy - 8);
+    sh.style.transform = `translateY(${d}px)`;
+    bg.style.background = `rgba(10,6,24,${Math.max(0, .5 - d / 800)})`;
+  }, { passive: false });
+  const end = () => {
+    if (!sh || !drag) { sh = null; return; }
+    const s = sh, b = bg, d = Math.max(0, dy - 8), fast = d > 30 && d / (Date.now() - t0) > .6;
+    sh = null; drag = false;
+    s.style.transition = 'transform .2s ease-out';
+    if (d > 100 || fast) {
+      s.style.transform = 'translateY(100%)'; b.style.transition = 'background .2s'; b.style.background = 'rgba(10,6,24,0)';
+      setTimeout(() => { if (s.isConnected) closeSheet(); }, 190);
+    } else { s.style.transform = ''; b.style.background = ''; }
+  };
+  host.addEventListener('touchend', end); host.addEventListener('touchcancel', end);
+})();
 
 let toastTimer;
 function toast(msg) {
