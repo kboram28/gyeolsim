@@ -27,6 +27,7 @@ export default {
 
     let body;
     try { body = await req.json(); } catch { return json({ error: 'bad json' }, 400); }
+    if (new URL(req.url).pathname.startsWith('/sync/')) return sync(env, new URL(req.url).pathname, body, json);
     const sub = cleanSub(body.sub);
     if (!sub) return json({ error: 'bad subscription' }, 400);
     const key = 'd:' + await sha256hex(sub.endpoint);
@@ -208,4 +209,24 @@ async function channelPage(env) {
   }
   return items.filter(i => /^[\w-]{11}$/.test(i.id || '') && i.at).map(i => ({ ...i, t: i.t.slice(0, 120) }))
     .sort((a, b) => Date.parse(b.at) - Date.parse(a.at)).slice(0, 30);
+}
+
+// 기기 연동: 앱이 연동 코드로 암호화한 데이터(blob)를 그대로 맡아 둠. 서버는 내용을 읽을 수 없음
+// id = 연동 코드에서 만든 SHA-256 (64자리 16진수), rev = 저장할 때마다 1씩 올라가는 번호
+const SYNC_MAX = 20 * 1024 * 1024;
+async function sync(env, path, body, json) {
+  const id = String(body.id || '');
+  if (!/^[0-9a-f]{64}$/.test(id)) return json({ error: 'bad id' }, 400);
+  const key = 's:' + id;
+  const cur = await env.PUSH.get(key, 'json') || { rev: 0, blob: null };
+  if (path === '/sync/get') return json(cur);
+  if (path === '/sync/put') {
+    const blob = body.blob;
+    if (typeof blob !== 'string' || !blob || blob.length > SYNC_MAX) return json({ error: 'bad blob' }, 400);
+    if (body.rev !== cur.rev) return json({ conflict: true, ...cur }, 409);
+    const rev = cur.rev + 1;
+    await env.PUSH.put(key, JSON.stringify({ rev, blob }));
+    return json({ ok: true, rev });
+  }
+  return json({ error: 'not found' }, 404);
 }

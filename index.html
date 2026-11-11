@@ -335,6 +335,7 @@ nav button.on svg{background:var(--pri-soft)}
 /* sheet & toast */
 .sheet-bg{position:fixed;inset:0;background:rgba(10,6,24,.5);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);z-index:40;display:flex;align-items:flex-end;justify-content:center;animation:fade .15s}
 .sheet{background:var(--card);width:100%;max-width:560px;border-radius:26px 26px 0 0;padding:10px 18px calc(env(safe-area-inset-bottom) + 18px);animation:up .25s cubic-bezier(.2,.8,.2,1);max-height:90vh;overflow:auto}
+.sync-code{font:800 19px/1.3 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.06em;padding:12px 14px;border-radius:14px;background:var(--fan-soft);text-align:center;word-break:break-all;user-select:all;-webkit-user-select:all}
 .sheet::before{content:"";display:block;width:38px;height:5px;border-radius:99px;background:var(--line);margin:0 auto 14px}
 .sheet h3{margin:0 0 16px;font-size:19px;font-weight:800;letter-spacing:-.03em}
 .sheet label.f{display:block;font-size:13px;font-weight:600;color:var(--sub);margin-bottom:12px}
@@ -531,7 +532,7 @@ label.f input,label.f textarea{color:var(--ink);font-weight:400}
 (() => {
 'use strict';
 const KEY = 'gyeolsim-v1';
-const APP_VERSION = 'v41'; // sw.js의 CACHE 숫자와 같이 올리기
+const APP_VERSION = 'v42'; // sw.js의 CACHE 숫자와 같이 올리기
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
@@ -631,6 +632,151 @@ function save() {
   try { localStorage.setItem(KEY, JSON.stringify(S)); }
   catch (e) { toast('저장 공간이 부족해요. 응원 사진을 지우거나 바꿔 보세요.'); }
   queuePushSync();
+  if (SY.code) { syncMark(); queueSync(); }
+}
+
+/* ---------- 기기 연동 (노트북·폰) ----------
+   데이터를 '단위'로 쪼개서 단위마다 마지막으로 바꾼 시각을 기억함 (지운 것도 시각을 남김).
+   두 기기의 내용을 단위별로 더 나중에 바꾼 쪽으로 합치고, 연동 코드로 암호화해서 서버에 맡김.
+   ui(설치 안내·알림 켬)와 fan.feed(새 영상 목록)는 기기마다 따로 씀 */
+const SYNC_KEY = 'gyeolsim-sync';
+const SYNC_SPEC = [['tasks', 'list'], ['events', 'list'], ['projects', 'list'], ['routines', 'list'], ['cats', 'list'], ['fan.diary', 'list'],
+  ['routineLog', 'map'], ['fan.cards', 'map'], ['fan.special', 'map'], ['fan.days', 'map'],
+  ['settings', 'blob'], ['stats', 'blob'], ['fan.profile', 'blob'], ['fan.theme', 'blob'], ['fan.hidden', 'blob'], ['fan.seen', 'blob'], ['fan.memories', 'blob']];
+const SY = (() => { try { const o = JSON.parse(localStorage.getItem(SYNC_KEY)); if (o && o.code) return { rev: 0, m: {}, del: {}, at: 0, ...o }; } catch (e) {} return { code: '' }; })();
+const syncSave = () => { try { localStorage.setItem(SYNC_KEY, JSON.stringify(SY)); } catch (e) {} };
+const pget = (o, p) => p.split('.').reduce((a, k) => a && a[k], o);
+const pset = (o, p, v) => { const ks = p.split('.'), last = ks.pop(); ks.reduce((a, k) => a[k] = a[k] || {}, o)[last] = v; };
+function syncFlat(s) { // 단위 이름 → 값
+  const out = {};
+  for (const [p, kind] of SYNC_SPEC) {
+    const v = pget(s, p);
+    if (kind === 'list') { (v || []).forEach(x => { out[p + '#' + x.id] = x; }); out[p + '@order'] = (v || []).map(x => x.id); }
+    else if (kind === 'map') Object.entries(v || {}).forEach(([k, x]) => { out[p + '#' + k] = x; });
+    else if (v !== undefined) out[p] = v;
+  }
+  return out;
+}
+function syncUnflat(flat, base) { // base(이 기기 데이터)에 합친 단위를 다시 끼워 넣음
+  const s = JSON.parse(JSON.stringify(base));
+  for (const [p, kind] of SYNC_SPEC) {
+    if (kind === 'blob') { if (p in flat) pset(s, p, flat[p]); continue; }
+    const items = Object.entries(flat).filter(([u]) => u.startsWith(p + '#')).map(([u, x]) => [u.slice(p.length + 1), x]);
+    if (kind === 'map') { pset(s, p, Object.fromEntries(items)); continue; }
+    const order = flat[p + '@order'] || [], pos = new Map(order.map((id, i) => [id, i]));
+    pset(s, p, items.map(([, x]) => x).sort((a, b) => (pos.has(a.id) ? pos.get(a.id) : 1e9) - (pos.has(b.id) ? pos.get(b.id) : 1e9)));
+  }
+  return s;
+}
+const jstr = o => JSON.stringify(o);
+// 비교용: 키 순서와 상관없이 같은 내용이면 같은 문자열
+const canon = o => Array.isArray(o) ? '[' + o.map(canon).join(',') + ']' : o && typeof o === 'object' ? '{' + Object.keys(o).sort().map(k => JSON.stringify(k) + ':' + canon(o[k])).join(',') + '}' : JSON.stringify(o) ?? 'null';
+let syncLast = null; // 마지막으로 기억한 단위들 (JSON 문자열)
+const flatStr = s => Object.fromEntries(Object.entries(syncFlat(s)).map(([u, v]) => [u, canon(v)]));
+// 바뀐 단위에 지금 시각을 찍음 (처음 보는 단위는 0 = 아주 옛날)
+function syncMark(fresh) {
+  const now = Date.now(), cur = flatStr(S);
+  if (!syncLast) { for (const u in cur) if (!(u in SY.m)) SY.m[u] = fresh ? now : 0; }
+  else {
+    for (const u in cur) if (syncLast[u] !== cur[u]) { SY.m[u] = now; delete SY.del[u]; }
+    for (const u in syncLast) if (!(u in cur)) { SY.del[u] = now; delete SY.m[u]; }
+  }
+  for (const u in SY.m) if (!(u in cur)) delete SY.m[u];
+  syncLast = cur; syncSave();
+}
+// 두 쪽을 단위별로 합침: 있음/지움 중 더 나중 것이 이김 (같으면 서버 쪽)
+function syncMerge(R) {
+  const L = { d: syncFlat(S), m: SY.m, del: SY.del }, out = { d: {}, m: {}, del: {} };
+  const units = new Set([...Object.keys(L.d), ...Object.keys(L.del), ...Object.keys(R.d), ...Object.keys(R.del)]);
+  const old = Date.now() - 60 * 864e5; // 두 달 지난 '지움' 표시는 버림
+  for (const u of units) {
+    const c = [];
+    if (u in R.d) c.push([R.m[u] || 0, 1, 'r']); if (u in R.del) c.push([R.del[u], 0.5, 'x']);
+    if (u in L.d) c.push([L.m[u] || 0, 0, 'l']); if (u in L.del) c.push([L.del[u], 0.4, 'x']);
+    c.sort((a, b) => b[0] - a[0] || b[1] - a[1]);
+    const [ts, , w] = c[0];
+    if (w === 'x') { if (ts > old) out.del[u] = ts; }
+    else { out.d[u] = w === 'r' ? R.d[u] : L.d[u]; out.m[u] = ts; }
+  }
+  return out;
+}
+// 암호화: 연동 코드 → SHA-256 → AES-GCM (내용은 gzip으로 줄여서)
+const SYNC_ABC = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const syncCodeFmt = c => c.match(/.{1,4}/g).join('-');
+const syncCodeClean = c => String(c || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+const sha = async s => new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)));
+const hex = b => [...b].map(x => x.toString(16).padStart(2, '0')).join('');
+const syncId = async () => hex(await sha('gyeolsim-sync-id:' + SY.code));
+const syncAes = async () => crypto.subtle.importKey('raw', await sha('gyeolsim-sync-key:' + SY.code), 'AES-GCM', false, ['encrypt', 'decrypt']);
+const pipeBytes = async (bytes, stream) => new Uint8Array(await new Response(new Blob([bytes]).stream().pipeThrough(stream)).arrayBuffer());
+const toB64 = b => { let s = ''; for (let i = 0; i < b.length; i += 0x8000) s += String.fromCharCode.apply(null, b.subarray(i, i + 0x8000)); return btoa(s); };
+async function syncSeal(doc) {
+  let raw = new TextEncoder().encode(jstr(doc)), z = 0;
+  if (window.CompressionStream) { raw = await pipeBytes(raw, new CompressionStream('gzip')); z = 1; }
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, await syncAes(), raw));
+  return (z ? 'z1.' : 'p1.') + toB64(iv) + '.' + toB64(ct);
+}
+async function syncOpen(blob) {
+  const [v, iv, ct] = blob.split('.'), un = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+  let raw = new Uint8Array(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: un(iv) }, await syncAes(), un(ct)));
+  if (v === 'z1') raw = await pipeBytes(raw, new DecompressionStream('gzip'));
+  return JSON.parse(new TextDecoder().decode(raw));
+}
+const syncPost = async (path, body) => {
+  const r = await fetch(PUSH_API + path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: jstr(body) });
+  const o = await r.json().catch(() => ({}));
+  if (!r.ok && r.status !== 409) throw new Error('sync ' + r.status);
+  return o;
+};
+let syncTimer = null, syncBusy = false, syncAgain = false, syncErr = '';
+const queueSync = (ms = 2000) => { clearTimeout(syncTimer); syncTimer = setTimeout(() => syncNow().catch(() => {}), ms); };
+async function syncNow() {
+  if (!SY.code) return;
+  if (syncBusy) { syncAgain = true; return; }
+  syncBusy = true;
+  try {
+    if (!syncLast) syncMark();
+    const id = await syncId();
+    for (let tries = 0; tries < 4; tries++) {
+      const cur = await syncPost('/sync/get', { id });
+      const o = cur.blob ? await syncOpen(cur.blob) : {}, R = { d: o.d || {}, m: o.m || {}, del: o.del || {} };
+      const M = syncMerge(R);
+      // 이 기기에 반영
+      if (canon(M.d) !== canon(syncFlat(S))) {
+        S = normalize(syncUnflat(M.d, S));
+        try { localStorage.setItem(KEY, jstr(S)); } catch (e) {}
+        SY.m = M.m; SY.del = M.del; syncLast = Object.fromEntries(Object.entries(M.d).map(([u, v]) => [u, canon(v)]));
+        syncMark(); // 정리(normalize)하며 바뀐 것은 이 기기에서 바꾼 것으로 침
+        if (isBusy()) syncNeedRender = true; else render();
+        queuePushSync();
+      } else { SY.m = M.m; SY.del = M.del; }
+      const L = { d: syncFlat(S), m: SY.m, del: SY.del };
+      if (cur.blob && canon(L) === canon(R)) { SY.rev = cur.rev; break; }
+      const put = await syncPost('/sync/put', { id, rev: cur.rev || 0, blob: await syncSeal(L) });
+      if (put.ok) { SY.rev = put.rev; break; }
+    }
+    SY.at = Date.now(); syncErr = ''; syncSave();
+  } catch (e) { syncErr = String(e && e.message || e); throw e; }
+  finally {
+    syncBusy = false;
+    if (syncAgain) { syncAgain = false; queueSync(300); }
+    const st = $('#sync-st'); if (st) st.innerHTML = syncStatus();
+  }
+}
+let syncNeedRender = false;
+const syncStatus = () => syncErr ? '⚠️ 연결이 안 돼요. 인터넷을 확인해 주세요.'
+  : SY.at ? `마지막 동기화 ${new Date(SY.at).toLocaleTimeString('ko-KR', { hour: 'numeric', minute: '2-digit' })}` : '동기화 중…';
+function syncStart(code, fresh) {
+  Object.assign(SY, { code, rev: 0, m: {}, del: {}, at: 0 });
+  syncLast = null; syncMark(fresh); syncErr = '';
+  return syncNow();
+}
+function syncStop() {
+  clearTimeout(syncTimer);
+  for (const k of Object.keys(SY)) delete SY[k];
+  SY.code = ''; syncLast = null;
+  try { localStorage.removeItem(SYNC_KEY); } catch (e) {}
 }
 if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
 
@@ -1860,9 +2006,19 @@ function renderSettings() {
       ${c.id === 'me' || c.id === 'fan' ? '' : `<button class="x" data-act="del-cat" data-id="${esc(c.id)}" aria-label="삭제">✕</button>`}</div>`).join('')}
   </section>
 
+  <section class="card" id="sync">
+    <h2>기기 연동 💻📱</h2>
+    ${SY.code ? `<p class="muted" style="margin:0 0 10px">이 기기는 연동 중이에요. 다른 기기에서 아래 코드를 넣으면 같은 기록을 함께 써요.</p>
+      <div class="sync-code">${syncCodeFmt(SY.code)}</div>
+      <p class="muted" id="sync-st" style="margin:8px 0 12px;font-size:13px">${syncStatus()}</p>
+      <div class="btn-row"><button class="btn ghost sm" data-act="sync-copy">코드 복사</button><button class="btn ghost sm" data-act="sync-now">지금 동기화</button><button class="btn danger sm" data-act="sync-off">연동 끊기</button></div>`
+    : `<p class="muted" style="margin:0 0 10px">노트북과 폰에서 같은 기록을 함께 쓸 수 있어요. 한 기기에서 <b>연동 시작</b>을 누르고, 나온 코드를 다른 기기의 <b>코드 넣기</b>에 입력하세요.</p>
+      <div class="btn-row"><button class="btn primary sm" data-act="sync-new">연동 시작</button><button class="btn ghost sm" data-act="sync-join">코드 넣기</button></div>`}
+  </section>
+
   <section class="card">
     <h2>데이터</h2>
-    <p class="muted" style="margin:0 0 10px">모든 기록은 이 폰 안에만 저장돼요. 가끔 백업 파일을 내보내 두면 안전해요.</p>
+    <p class="muted" style="margin:0 0 10px">${SY.code ? '기록은 이 기기에 저장되고, 연동한 기기와 암호화해서 주고받아요.' : '모든 기록은 이 기기 안에만 저장돼요.'} 가끔 백업 파일을 내보내 두면 안전해요.</p>
     <div class="btn-row">
       <button class="btn ghost sm" data-act="export">백업 내보내기</button>
       <label class="btn ghost sm file-btn">백업 불러오기<input type="file" accept="application/json,.json" data-file="import"></label>
@@ -1917,7 +2073,7 @@ function openCatSheet(c) {
     </form></div></div>`;
   if (isNew) setTimeout(() => { const i = $('#sheet input[name=text]'); if (i) i.focus(); }, 50);
 }
-const closeSheet = () => { $('#sheet').innerHTML = ''; };
+const closeSheet = () => { $('#sheet').innerHTML = ''; if (syncNeedRender) { syncNeedRender = false; render(); } };
 // 창을 아래로 끌어내리면 닫기 (맨 위까지 스크롤된 상태에서만)
 (() => {
   let sh = null, bg = null, y0 = 0, t0 = 0, dy = 0, drag = false;
@@ -2178,8 +2334,30 @@ document.addEventListener('click', e => {
     case 'manage-cats': closeSheet(); tab = 'set'; openProject = null; render(); { const s = $('#cats'); if (s) s.scrollIntoView(); } break;
     case 'del-photo': if (confirm('배경 사진을 없앨까요?')) { S.fan.theme.bg = ''; S.settings.photo = null; save(); render(); } break;
     case 'export': exportData(); break;
+    case 'sync-new': {
+      if (!confirm('이 기기의 기록으로 연동을 시작할까요?\n코드가 만들어지면 다른 기기에서 그 코드를 넣어 주세요.')) break;
+      const code = Array.from(crypto.getRandomValues(new Uint8Array(20)), n => SYNC_ABC[n % 32]).join('');
+      syncStart(code, true).then(() => toast('연동을 시작했어요. 다른 기기에 코드를 넣어 주세요.')).catch(() => toast('서버에 연결하지 못했어요. 지금 동기화를 다시 눌러 주세요.'));
+      render(); break;
+    }
+    case 'sync-join':
+      sheet(`<form data-form="sync-join"><h3>연동 코드 넣기</h3>
+        <p class="muted" style="margin:-6px 0 14px">다른 기기의 설정 → 기기 연동에 나온 코드를 넣어 주세요. 이 기기의 기록은 연동한 기록과 합쳐져요.</p>
+        <label class="f">연동 코드<input type="text" name="code" required autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="XXXX-XXXX-XXXX-XXXX-XXXX"></label>
+        <div class="sheet-btns"><button type="button" class="btn ghost" data-act="close">취소</button><button class="btn primary">연동하기</button></div></form>`, '연동 코드 넣기');
+      setTimeout(() => { const i = $('#sheet input[name=code]'); if (i) i.focus(); }, 50);
+      break;
+    case 'sync-copy': {
+      const c = syncCodeFmt(SY.code);
+      (navigator.clipboard ? navigator.clipboard.writeText(c) : Promise.reject()).then(() => toast('코드를 복사했어요.'), () => toast('코드를 길게 눌러 복사해 주세요.'));
+      break;
+    }
+    case 'sync-now': syncNow().then(() => toast('동기화했어요.')).catch(() => toast('서버에 연결하지 못했어요.')); break;
+    case 'sync-off':
+      if (confirm('이 기기의 연동을 끊을까요?\n지금까지의 기록은 이 기기에 그대로 남고, 다른 기기와 더 이상 주고받지 않아요.')) { syncStop(); render(); toast('연동을 끊었어요.'); }
+      break;
     case 'reset':
-      if (confirm('모든 할 일, 일정, 설정을 지울까요? 되돌릴 수 없어요.') && confirm('정말 초기화할까요?')) { S = defaults(); save(); tab = 'home'; render(); toast('초기화했어요.'); }
+      if (confirm(`모든 할 일, 일정, 설정을 지울까요? 되돌릴 수 없어요.${SY.code ? '\n(이 기기의 연동도 끊겨요. 다른 기기의 기록은 그대로예요.)' : ''}`) && confirm('정말 초기화할까요?')) { syncStop(); S = defaults(); save(); tab = 'home'; render(); toast('초기화했어요.'); }
       break;
   }
 });
@@ -2218,6 +2396,26 @@ document.addEventListener('input', e => {
 document.addEventListener('submit', e => {
   e.preventDefault();
   const f = e.target, k = f.dataset.form, el = f.elements;
+  if (k === 'sync-join') {
+    const code = syncCodeClean(el.code.value), btn = f.querySelector('.btn.primary');
+    if (code.length !== 20) { toast('코드는 20글자예요. 다시 확인해 주세요.'); return; }
+    btn.disabled = true; btn.textContent = '확인 중…';
+    (async () => {
+      const prev = SY.code; SY.code = code; // 코드가 맞는지 먼저 확인 (서버에 있고, 풀리는지)
+      try {
+        const cur = await syncPost('/sync/get', { id: await syncId() });
+        if (!cur.blob) throw new Error('none');
+        await syncOpen(cur.blob);
+      } catch (err) {
+        SY.code = prev; btn.disabled = false; btn.textContent = '연동하기';
+        toast(err.message === 'none' || err.name === 'OperationError' ? '이 코드로 연동된 기록이 없어요. 코드를 다시 확인해 주세요.' : '서버에 연결하지 못했어요.'); return;
+      }
+      closeSheet();
+      try { await syncStart(code, false); render(); toast('연동했어요! 이제 두 기기에서 같은 기록을 써요.'); }
+      catch (err) { render(); toast('연동은 됐지만 아직 받지 못했어요. 잠시 뒤 다시 열어 주세요.'); }
+    })();
+    return;
+  }
   if (k === 'sub-task') {
     if (!el.text.value.trim()) { toast('할 일을 입력해 주세요.'); el.text.focus(); return; }
     const title = el.text.value.trim();
@@ -2366,7 +2564,7 @@ function importData(file) {
 
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) return;
-  render(); queuePushSync(); refreshFeed();
+  render(); queuePushSync(); refreshFeed(); if (SY.code) queueSync(100);
   if ('serviceWorker' in navigator) navigator.serviceWorker.getRegistration().then(r => r && r.update()).catch(() => {}); // 새 버전 확인
 });
 
@@ -2376,7 +2574,11 @@ setInterval(() => {
   if (document.hidden) return;
   const busy = $('#sheet').innerHTML || (document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName));
   if (todayStr() !== renderedDay && !busy) { renderedDay = todayStr(); render(); } // 자정이 지나면 이월 처리
+  if (syncNeedRender && !busy) { syncNeedRender = false; render(); }
 }, 20000);
+// 연동 중이면 앱을 보고 있는 동안 30초마다 다른 기기의 변경을 받아 옴 (입력 중엔 쉼)
+setInterval(() => { if (SY.code && !document.hidden && !isBusy()) syncNow().catch(() => {}); }, 30000);
+if (SY.code) queueSync(300);
 
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
   // 새 서비스 워커가 자리 잡으면 한 번 새로고침해서 새 버전을 바로 보여 줌 (첫 설치 때는 제외)
